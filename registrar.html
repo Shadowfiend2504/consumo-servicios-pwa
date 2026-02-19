@@ -3,27 +3,370 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registrar factura</title>
+  <title>Registrar Factura - Control de Consumo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-  <main>
-    <h3>Registrar factura</h3>
+  <!-- Header -->
+  <header class="navbar-header">
+    <div class="d-flex align-items-center h-100 w-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="brand-logo">
+          <span class="brand-text">UAN</span>
+        </div>
+        <span class="page-title">Registrar Factura</span>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <button class="btn btn-logout" onclick="history.back()">
+          <i class="bi bi-arrow-left"></i>
+          <span class="ms-2">Volver</span>
+        </button>
+      </div>
+    </div>
+  </header>
 
-    <select id="servicio">
-      <option>Agua</option>
-      <option>Energía</option>
-      <option>Gas</option>
-      <option>Internet</option>
-    </select>
+  <!-- Contenido Principal -->
+  <div class="container-fluid py-5" style="min-height: calc(100vh - 70px); background: var(--bg);">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        
+        <!-- Card Principal -->
+        <div class="card shadow-lg" style="border: none; border-radius: 15px;">
+          <div class="card-body p-4">
+            
+            <!-- Encabezado -->
+            <div class="mb-5">
+              <h2 class="card-title" style="color: var(--primary); font-weight: 600;">
+                <i class="bi bi-file-earmark-text"></i> Registrar Nueva Factura
+              </h2>
+                <div class="mb-3">
+                  <label for="adjunto" class="form-label">Adjuntar archivo (opcional)</label>
+                  <input type="file" id="adjunto" class="form-control" accept="application/pdf,image/*">
+                  <small class="text-muted">Puedes adjuntar una imagen o PDF de la factura.</small>
+                </div>
+              <p class="text-muted">Completa el formulario para registrar el consumo de un servicio</p>
+            </div>
 
-    <input type="number" id="consumo" placeholder="Consumo">
-    <input type="number" id="valor" placeholder="Valor pagado">
+            <form id="formularioFactura">
+              
+              <!-- Sección 1: Servicio -->
+              <div class="mb-4">
+                <h5 style="color: var(--primary); font-weight: 600; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">
+                  <i class="bi bi-droplet"></i> Información del Servicio
+                </h5>
+                
+                <div class="mt-4">
+                  <label for="servicio" class="form-label fw-500">Servicio <span class="text-danger">*</span></label>
+                  <select id="servicio" class="form-select form-select-lg" required>
+                    <option value="">-- Selecciona un servicio --</option>
+                    <option value="agua">💧 Agua</option>
+                    <option value="energia">⚡ Electricidad / Energía</option>
+                    <option value="gas">🔥 Gas Natural</option>
+                    <option value="internet">📶 Internet</option>
+                  </select>
+                  <small class="text-muted">Selecciona el tipo de servicio para el cual registras la factura</small>
+                </div>
 
-    <button onclick="guardar()">Guardar</button>
-    <button onclick="volver()">Volver</button>
-  </main>
+                <div class="mt-3">
+                  <label for="periodo" class="form-label fw-500">Período <span class="text-danger">*</span></label>
+                  <input type="month" id="periodo" class="form-control form-control-lg" required>
+                  <small class="text-muted">Mes y año de la factura</small>
+                </div>
+              </div>
 
-  <script src="js/facturas.js"></script>
+              <hr class="my-4">
+
+              <!-- Sección 2: Consumo y Valor -->
+              <div class="mb-4">
+                <h5 style="color: var(--primary); font-weight: 600; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">
+                  <i class="bi bi-calculator"></i> Datos de Consumo y Pago
+                </h5>
+                
+                <div class="row g-3 mt-3">
+                  <div class="col-md-6">
+                    <label for="consumo" class="form-label fw-500">Consumo <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-lg">
+                      <input 
+                        type="number" 
+                        id="consumo" 
+                        class="form-control" 
+                        placeholder="0,00"
+                        min="0"
+                        step="0.01"
+                        required
+                      >
+                      <span class="input-group-text" id="unidad-consumo">m³</span>
+                    </div>
+                    <small class="text-muted d-block mt-2">Cantidad consumida (la unidad cambia según el servicio)</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="valor" class="form-label fw-500">Valor Pagado <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-lg">
+                      <span class="input-group-text">$</span>
+                      <input 
+                        type="number" 
+                        id="valor" 
+                        class="form-control" 
+                        placeholder="0,00"
+                        min="0"
+                        step="0.01"
+                        required
+                      >
+                    </div>
+                    <small class="text-muted d-block mt-2">Monto total pagado por el servicio</small>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4">
+
+              <!-- Sección 3: Fechas Importantes -->
+              <div class="mb-4">
+                <h5 style="color: var(--primary); font-weight: 600; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">
+                  <i class="bi bi-calendar-event"></i> Fechas Importantes
+                </h5>
+                
+                <div class="row g-3 mt-3">
+                  <div class="col-md-6">
+                    <label for="fecha_corte" class="form-label fw-500">
+                      <i class="bi bi-hourglass-split"></i> Fecha de Corte
+                      <span class="badge bg-info ms-2">Opcional</span>
+                    </label>
+                    <input 
+                      type="date" 
+                      id="fecha_corte" 
+                      class="form-control form-control-lg"
+                    >
+                    <small class="text-muted d-block mt-2">Última fecha del período de consumo</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="fecha_pago" class="form-label fw-500">
+                      <i class="bi bi-wallet2"></i> Fecha de Pago
+                      <span class="badge bg-info ms-2">Opcional</span>
+                    </label>
+                    <input 
+                      type="date" 
+                      id="fecha_pago" 
+                      class="form-control form-control-lg"
+                    >
+                    <small class="text-muted d-block mt-2">Cuándo realizaste el pago</small>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4">
+
+              <!-- Sección 4: Notas adicionales -->
+              <div class="mb-4">
+                <label for="notas" class="form-label fw-500">
+                  <i class="bi bi-sticky"></i> Notas Adicionales
+                  <span class="badge bg-secondary ms-2">Opcional</span>
+                </label>
+                <textarea 
+                  id="notas" 
+                  class="form-control form-control-lg" 
+                  rows="3"
+                  placeholder="Ej: Lectura manual, cambio de tarifa, reclamo pendiente..."
+                  style="resize: vertical;"
+                ></textarea>
+                <small class="text-muted d-block mt-2">Cualquier observación importante sobre esta factura</small>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="d-grid gap-2 gap-sm-3 d-sm-flex justify-content-sm-end mt-5 pt-4 border-top">
+                <button 
+                  type="reset" 
+                  class="btn btn-lg btn-outline-secondary"
+                  onclick="limpiarFormulario()"
+                >
+                  <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-lg btn-secondary"
+                  onclick="history.back()"
+                >
+                  <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  class="btn btn-lg btn-primary"
+                  style="min-width: 150px;"
+                >
+                  <i class="bi bi-check-circle"></i> Guardar Factura
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+
+        <!-- Card de Ayuda -->
+        <div class="card mt-4" style="border: none; border-left: 4px solid var(--accent); border-radius: 10px; background: rgba(7, 123, 255, 0.05);">
+          <div class="card-body">
+            <h6 class="card-title" style="color: var(--primary);">
+              <i class="bi bi-lightbulb"></i> Consejo
+            </h6>
+            <p class="card-text text-muted mb-0 small">
+              Registra tus facturas periódicamente para mantener un mejor control de tu consumo. 
+              Los datos históricos te ayudarán a analizar tendencias y detectar anomalías.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="toast-container"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/alertas.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    /**
+     * Actualizar unidad de consumo según el servicio seleccionado
+     */
+    document.getElementById('servicio').addEventListener('change', function() {
+      const unidadSpan = document.getElementById('unidad-consumo');
+      const consumoInput = document.getElementById('consumo');
+      
+      const unidades = {
+        'agua': 'm³',
+        'energia': 'kWh',
+        'gas': 'm³',
+        'internet': 'Mbps'
+      };
+      
+      const unidad = unidades[this.value] || 'm³';
+      unidadSpan.textContent = unidad;
+      consumoInput.placeholder = `Ingresa el consumo en ${unidad}`;
+    });
+
+    /**
+     * Limpiar formulario
+     */
+    function limpiarFormulario() {
+      document.getElementById('formularioFactura').reset();
+      document.getElementById('unidad-consumo').textContent = 'm³';
+    }
+
+    /**
+     * Guardar factura
+     */
+    document.getElementById('formularioFactura').addEventListener('submit', function(e) {
+      e.preventDefault();
+      guardar();
+    });
+
+    function guardar() {
+      const servicio = document.getElementById('servicio').value;
+      const periodo = document.getElementById('periodo').value;
+      const consumo = parseFloat(document.getElementById('consumo').value);
+      const valor = parseFloat(document.getElementById('valor').value);
+      const fecha_corte = document.getElementById('fecha_corte').value;
+      const fecha_pago = document.getElementById('fecha_pago').value;
+      const notas = document.getElementById('notas').value;
+      const inputAdjunto = document.getElementById('adjunto');
+
+      if (!servicio || !periodo || isNaN(consumo) || isNaN(valor)) {
+        showToast('Por favor completa todos los campos obligatorios', { type: 'warning' });
+        return;
+      }
+
+      const factura = {
+        id: 'FAC-' + Date.now(),
+        servicio: servicio,
+        periodo: periodo,
+        consumo: consumo,
+        valor: valor,
+        fecha_corte: fecha_corte,
+        fecha_pago: fecha_pago,
+        notas: notas,
+        fecha_registro: new Date().toISOString(),
+        adjunto: null
+      };
+
+      // Si hay archivo adjunto, leer como dataURL
+      if (inputAdjunto && inputAdjunto.files && inputAdjunto.files[0]) {
+        const file = inputAdjunto.files[0];
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          factura.adjunto = {
+            name: file.name,
+            type: file.type,
+            data: evt.target.result
+          };
+          // Guardar en localStorage después de cargar el adjunto
+          guardarFacturaEnStorage(factura);
+        };
+        reader.onerror = function(err) {
+          showToast('Error al leer el archivo adjunto', { type: 'error' });
+          console.error(err);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Sin adjunto
+        guardarFacturaEnStorage(factura);
+      }
+    }
+
+    function guardarFacturaEnStorage(factura) {
+      try {
+        let facturas = JSON.parse(localStorage.getItem('facturas')) || [];
+        facturas.unshift(factura);
+        localStorage.setItem('facturas', JSON.stringify(facturas));
+        showToast('¡Factura registrada exitosamente!', { type: 'success', delay: 2000 });
+        setTimeout(() => {
+          limpiarFormulario();
+          history.back();
+        }, 1000);
+      } catch (error) {
+        showToast('Error al guardar la factura: ' + error.message, { type: 'error' });
+        console.error('Error:', error);
+      }
+    }
+
+    /**
+     * Mostrar toast/notificación
+     */
+    function showToast(message, options = {}) {
+      const { type = 'info', delay = 0 } = options;
+      const container = document.getElementById('toast-container');
+
+      if (!container) {
+        alert(message);
+        return;
+      }
+
+      const toastId = 'toast-' + Date.now();
+      const alertClass = `alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info'}`;
+
+      const toastHTML = `
+        <div id="${toastId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+          <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', toastHTML);
+
+      const timeoutDelay = delay || 5000;
+      setTimeout(() => {
+        const toastElement = document.getElementById(toastId);
+        if (toastElement) {
+          toastElement.remove();
+        }
+      }, timeoutDelay);
+    }
+  </script>
 </body>
 </html>

@@ -3,23 +3,435 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard</title>
+  <title>Dashboard - Control de Consumo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
+  <!-- Header -->
+  <header class="navbar-header">
+    <div class="d-flex align-items-center h-100 w-100">
+      <button class="btn-menu-toggle me-3" onclick="toggleMenu()" style="display: none;">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="d-flex align-items-center gap-3">
+        <div class="brand-logo">
+          <span class="brand-text">UAN</span>
+        </div>
+        <span class="page-title">Dashboard - Control de Consumo</span>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <div class="user-profile">
+          <img id="userAvatar" src="https://via.placeholder.com/40" alt="Usuario" class="avatar">
+          <span id="userName" class="ms-2">Usuario</span>
+        </div>
+        <button class="btn-action" id="btnRegistrar" onclick="irRegistro()" title="Registrar nueva factura">
+          <i class="bi bi-plus-circle"></i>
+          <span class="ms-2 d-none d-md-inline">Registrar</span>
+        </button>
+        <button class="btn btn-logout" onclick="logout()" title="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
 
-<header>
-  <h2>Consumo del hogar</h2>
-  <div id="usuario"></div>
-</header>
+  <!-- Dashboard Container -->
+  <div class="dashboard-container">
+    <!-- Menú Lateral -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link active" data-section="dashboard">
+          <i class="bi bi-graph-up"></i>
+          <span class="nav-text">Dashboard</span>
+        </a>
 
-<nav>
-  <button onclick="irRegistro()">Registrar factura</button>
-  <button onclick="logout()">Cerrar sesión</button>
-</nav>
+        <div class="nav-section">
+          <div class="nav-section-title">Gestión</div>
+          <a href="#" onclick="mostrarSeccion('consumo', event)" class="nav-link" data-section="consumo">
+            <i class="bi bi-droplet"></i>
+            <span class="nav-text">Consumo por Servicio</span>
+          </a>
+          <a href="registrar.html" class="nav-link" data-section="registrar">
+            <i class="bi bi-file-earmark-plus"></i>
+            <span class="nav-text">Registrar Factura</span>
+          </a>
+          <a href="#" onclick="mostrarSeccion('historial', event)" class="nav-link" data-section="historial">
+            <i class="bi bi-clock-history"></i>
+            <span class="nav-text">Historial</span>
+          </a>
+        </div>
 
-<div id="resumen"></div>
+        <div class="nav-section">
+          <div class="nav-section-title">Análisis</div>
+          <a href="#" onclick="mostrarSeccion('estadisticas', event)" class="nav-link" data-section="estadisticas">
+            <i class="bi bi-bar-chart"></i>
+            <span class="nav-text">Estadísticas</span>
+          </a>
+          <a href="#" onclick="mostrarSeccion('comparativas', event)" class="nav-link" data-section="comparativas">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span class="nav-text">Comparativas</span>
+          </a>
+        </div>
 
-<script src="js/analisis.js"></script>
+        <div class="nav-section">
+          <div class="nav-section-title">Perfil</div>
+          <a href="#" onclick="mostrarSeccion('perfil', event)" class="nav-link" data-section="perfil">
+            <i class="bi bi-person"></i>
+            <span class="nav-text">Mi Perfil</span>
+          </a>
+          <a href="#" onclick="logout()" class="nav-link" data-section="logout">
+            <i class="bi bi-box-arrow-left"></i>
+            <span class="nav-text">Cerrar Sesión</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+      <div class="content-area">
+
+        <!-- Resumen General -->
+        <section id="resumen-section" class="content-section active">
+          <div class="mb-5">
+            <h1>Dashboard</h1>
+            <p class="text-muted">Resumen general de tu consumo de servicios</p>
+          </div>
+
+          <!-- Cards de Resumen -->
+          <div class="row g-3 mb-5" id="resumen">
+            <div class="col-md-6 col-lg-3">
+              <div class="card-stat">
+                <div class="stat-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;">
+                  <i class="bi bi-droplet"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Agua</div>
+                  <div class="stat-number">0 m³</div>
+                  <small class="text-muted">Este mes</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+              <div class="card-stat">
+                <div class="stat-icon" style="background: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                  <i class="bi bi-lightning-charge"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Electricidad</div>
+                  <div class="stat-number">0 kWh</div>
+                  <small class="text-muted">Este mes</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+              <div class="card-stat">
+                <div class="stat-icon" style="background: rgba(220, 53, 69, 0.1); color: #dc3545;">
+                  <i class="bi bi-fire"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Gas</div>
+                  <div class="stat-number">0 m³</div>
+                  <small class="text-muted">Este mes</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+              <div class="card-stat">
+                <div class="stat-icon" style="background: rgba(108, 117, 125, 0.1); color: #6c757d;">
+                  <i class="bi bi-wifi"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">Internet</div>
+                  <div class="stat-number">100 Mbps</div>
+                  <small class="text-muted">Velocidad</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row Principal: Gráfico + Alertas -->
+          <div class="row g-4">
+            <!-- Gráfico de Análisis -->
+            <div class="col-lg-8">
+              <div class="card shadow-sm" style="border: none; border-radius: 10px;">
+                <div class="card-body p-4">
+                  <div class="mb-4">
+                    <h5 class="card-title" style="color: var(--primary); font-weight: 600;">
+                      <i class="bi bi-graph-up"></i> Análisis de Consumo
+                    </h5>
+                  </div>
+
+                  <!-- Filtros -->
+                  <div class="row g-2 align-items-end mb-4">
+                    <div class="col-md-4">
+                      <label for="filtro-servicio" class="form-label fw-500">Servicio</label>
+                      <select id="filtro-servicio" class="form-select form-select-sm">
+                        <option value="agua">💧 Agua</option>
+                        <option value="energia">⚡ Electricidad</option>
+                        <option value="gas">🔥 Gas</option>
+                        <option value="internet">📶 Internet</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label for="filtro-desde" class="form-label fw-500">Desde</label>
+                      <input type="month" id="filtro-desde" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                      <label for="filtro-hasta" class="form-label fw-500">Hasta</label>
+                      <input type="month" id="filtro-hasta" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-2">
+                      <button id="btn-filtrar" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Gráfico -->
+                  <div style="position: relative; height: 300px;">
+                    <canvas id="chart-consumo"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel de Alertas -->
+            <div class="col-lg-4">
+              <div class="card shadow-sm" style="border: none; border-radius: 10px;">
+                <div class="card-body p-4">
+                  <div class="mb-4">
+                    <h5 class="card-title" style="color: var(--primary); font-weight: 600;">
+                      <i class="bi bi-bell"></i> Alertas
+                    </h5>
+                  </div>
+                  <div id="alertas" style="max-height: 350px; overflow-y: auto;">
+                    <div class="text-center text-muted py-4">
+                      <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                      <p class="mt-2 small">Cargando alertas...</p>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 mt-4 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-primary flex-grow-1" onclick="mostrarAlertasEn('alertas')">
+                      <i class="bi bi-arrow-clockwise"></i> Refrescar
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="limpiarAlertas(); mostrarAlertasEn('alertas')">
+                      <i class="bi bi-trash"></i> Limpiar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen de Gastos -->
+          <div class="row g-4 mt-4">
+            <div class="col-lg-12">
+              <div class="card shadow-sm" style="border: none; border-radius: 10px;">
+                <div class="card-body p-4">
+                  <h5 class="card-title mb-4" style="color: var(--primary); font-weight: 600;">
+                    <i class="bi bi-wallet2"></i> Resumen de Gastos
+                  </h5>
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Servicio</th>
+                          <th class="text-end">Consumo</th>
+                          <th class="text-end">Valor</th>
+                          <th class="text-center">Estado</th>
+                          <th class="text-center">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tabla-gastos">
+                        <tr>
+                          <td colspan="5" class="text-center text-muted py-4">No hay registros</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast container -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="toast-container"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/alertas.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/analisis.js"></script>
+  <script>
+    /**
+     * Inicializar Dashboard
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuthStatus();
+      updateUserInfo();
+      mostrarAlertasEn('alertas');
+      initChart();
+      cargarResumen();
+    });
+
+    /**
+     * Actualizar información del usuario
+     */
+    function updateUserInfo() {
+      const userEmail = localStorage.getItem('userEmail') || 'Usuario';
+      const userName = document.getElementById('userName');
+      
+      if (userName) {
+        userName.textContent = userEmail.split('@')[0].charAt(0).toUpperCase() + 
+                              userEmail.split('@')[0].slice(1);
+      }
+    }
+
+    /**
+     * Verificar autenticación
+     */
+    function checkAuthStatus() {
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userEmail) {
+        if (window.location.pathname !== '/index.html') {
+          window.location.href = 'index.html';
+        }
+      }
+    }
+
+    /**
+     * Toggle del menú en dispositivos móviles
+     */
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const dashboardContainer = document.querySelector('.dashboard-container');
+      
+      if (sidebar) {
+        sidebar.classList.toggle('open');
+        dashboardContainer.classList.toggle('sidebar-open');
+      }
+    }
+
+    /**
+     * Mostrar sección
+     */
+    function mostrarSeccion(seccion, event) {
+      if (event) {
+        event.preventDefault();
+      }
+      // Aquí puedes agregar lógica para mostrar diferentes secciones
+      console.log('Mostrar sección:', seccion);
+    }
+
+    /**
+     * Ir a registrar factura
+     */
+    function irRegistro() {
+      window.location.href = 'registrar.html';
+    }
+
+    /**
+     * Cargar resumen de consumo
+     */
+    function cargarResumen() {
+      try {
+        const facturas = JSON.parse(localStorage.getItem('facturas')) || [];
+        
+        // Agrupar por servicio y calcular totales
+        const servicios = {};
+        facturas.forEach(f => {
+          if (!servicios[f.servicio]) {
+            servicios[f.servicio] = { consumo: 0, valor: 0 };
+          }
+          servicios[f.servicio].consumo += f.consumo;
+          servicios[f.servicio].valor += f.valor;
+        });
+
+        // Actualizar tabla de gastos
+        const tabla = document.getElementById('tabla-gastos');
+        if (Object.keys(servicios).length > 0) {
+          tabla.innerHTML = Object.entries(servicios).map(([servicio, datos]) => `
+            <tr>
+              <td><strong>${servicio.charAt(0).toUpperCase() + servicio.slice(1)}</strong></td>
+              <td class="text-end">${datos.consumo.toFixed(2)}</td>
+              <td class="text-end">$${datos.valor.toFixed(2)}</td>
+              <td class="text-center"><span class="badge bg-success">Registrado</span></td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-outline-primary" onclick="alert('Ver detalles')">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error cargando resumen:', error);
+      }
+    }
+
+    /**
+     * Inicializar gráfico
+     */
+    function initChart() {
+      const ctx = document.getElementById('chart-consumo')?.getContext('2d');
+      if (!ctx) return;
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Consumo (m³)',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: 'var(--accent)',
+            backgroundColor: 'rgba(7, 123, 255, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    /**
+     * Logout
+     */
+    function logout() {
+      if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userPassword');
+        window.location.href = 'index.html';
+      }
+    }
+  </script>
 </body>
 </html>

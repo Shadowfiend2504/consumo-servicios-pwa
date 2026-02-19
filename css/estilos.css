@@ -1,15 +1,495 @@
-/* Estilos básicos para PWA Consumo Servicios */
-:root{
-  --bg:#f7f7f7;
-  --card:#ffffff;
-  --accent:#0b5fff;
+/* Estilos para PWA Consumo Servicios con Menú Lateral */
+:root {
+  --primary: #001d3d;
+  --primary-light: #003f7f;
+  --accent: #007bff;
+  --accent-light: #0b5fff;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --text: #222;
+  --text-muted: #6c757d;
+  --border: #dee2e6;
+  --sidebar-width: 280px;
+  --header-height: 70px;
 }
-*{box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#222;margin:0;padding:20px}
-main{max-width:900px;margin:0 auto}
-header h1{margin:0 0 16px}
-form{background:var(--card);padding:16px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-label{display:block;margin-bottom:10px}
-input,button{font:inherit;padding:8px;border:1px solid #ddd;border-radius:4px}
-button{background:var(--accent);color:#fff;border:none;cursor:pointer}
-button:disabled{opacity:0.6;cursor:default}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Login Screen - Nuevo Layout */
+.login-screen-layout {
+  display: flex;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.login-form-content {
+  background: var(--card);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+
+.login-image-container {
+  flex: 1;
+  background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8vJLjgBCNVi8Jc3hoo93yO8AmO3ftnYfHyw&s');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: none;
+}
+
+.brand-logo-large {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-radius: 8px;
+  margin: 0 auto;
+}
+
+.brand-logo-large .brand-text {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: white;
+}
+
+.login-form-content input,
+.login-form-content select {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.login-form-content input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(7, 123, 255, 0.1);
+}
+
+.login-form-content input.is-valid {
+  border-color: #28a745;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='8 8 24 24'%3e%3cpath fill='none' stroke='%2328a745' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m10.97 12.97l6 6L27.03 6.97'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.2em 1.2em;
+  padding-right: 2rem;
+}
+
+.login-form-content input.is-invalid {
+  border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 12 24 24'%3e%3ccircle cx='24' cy='24' r='12' fill='none' stroke='%23dc3545' stroke-width='2'/%3e%3cpath fill='%23dc3545' d='M24 10v8m0 4v2'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.2em 1.2em;
+  padding-right: 2rem;
+}
+
+.input-group {
+  margin-bottom: 0.5rem;
+}
+
+.input-group .input-group-text {
+  padding: 0.5rem 0.75rem;
+  background-color: #f8f9fa;
+}
+
+.input-group .form-control {
+  padding: 0.5rem 0.75rem;
+}
+
+.fw-600 {
+  font-weight: 600;
+}
+
+.fw-500 {
+  font-weight: 500;
+}
+
+.alert-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* Responsive - Mostrar imagen en pantallas grandes */
+@media (min-width: 992px) {
+  .login-image-container {
+    display: block;
+  }
+}
+
+/* Responsive - Ajustes para móviles */
+@media (max-width: 768px) {
+  .login-form-container {
+    max-width: 100%;
+  }
+  
+  .login-form-content {
+    padding: 25px;
+  }
+  
+  .login-form-content h2 {
+    font-size: 20px;
+  }
+}
+
+/* Login Screen antigua - Mantener para compatibilidad */
+
+/* Estilos básicos para PWA Consumo Servicios */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Header */
+.navbar-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+.btn-menu-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  margin-right: 10px;
+  display: none;
+}
+
+.btn-menu-toggle:hover {
+  opacity: 0.8;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-logout {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Dashboard Container */
+.dashboard-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-nav {
+  padding: 20px 10px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  font-size: 14px;
+}
+
+.nav-link i {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.nav-link:hover {
+  background: rgba(0, 29, 61, 0.08);
+  color: var(--primary);
+}
+
+.nav-link.active {
+  background: rgba(7, 123, 255, 0.1);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+
+.nav-section {
+  margin-bottom: 20px;
+}
+
+.nav-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px 8px;
+  margin-bottom: 5px;
+}
+
+.nav-text {
+  display: inline-block;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.content-area {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+  width: 100%;
+}
+
+.content-section {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.content-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-section h1 {
+  color: var(--primary);
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Cards de Estadísticas */
+.card-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.card-stat:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 32px;
+  color: var(--accent);
+  width: 50px;
+  height: 50px;
+  background: rgba(7, 123, 255, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Botones */
+.btn {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 29, 61, 0.2);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    height: calc(100vh - var(--header-height));
+    z-index: 999;
+    transform: translateX(-100%);
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .btn-menu-toggle {
+    display: block;
+  }
+
+  .content-area {
+    padding: 20px;
+  }
+
+  .dashboard-container {
+    position: relative;
+  }
+
+  /* Overlay cuando está abierto el menú */
+  .dashboard-container::before {
+    content: '';
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 998;
+  }
+
+  .dashboard-container.sidebar-open::before {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Scrollbar styling */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
