@@ -5,12 +5,13 @@
 // ============================================================
 
 const firebaseConfig = {
-    apiKey: "TU_API_KEY_AQUI",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROJECT_ID",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyAhqqPY_gM3MCIQ4NMxvvP6GvdCbpHcyIE",
+  authDomain: "sistemapwa.firebaseapp.com",
+  projectId: "sistemapwa",
+  storageBucket: "sistemapwa.firebasestorage.app",
+  messagingSenderId: "763042636645",
+  appId: "1:763042636645:web:7d44b4bcf08afa76ed778c",
+  measurementId: "G-YYXXH3RM49"
 };
 
 // Detectar si Firebase está configurado
