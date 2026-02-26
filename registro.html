@@ -184,6 +184,7 @@
 
     async function registrarUsuario(event) {
       event.preventDefault();
+      console.log('registrarUsuario - FIREBASE_CONFIGURED=', FIREBASE_CONFIGURED, 'auth=', auth);
       const nombre = document.getElementById('nombre').value.trim();
       const email = document.getElementById('email').value.trim();
       const telefono = document.getElementById('telefono').value.trim();

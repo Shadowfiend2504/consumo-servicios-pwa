@@ -27,6 +27,7 @@ if (FIREBASE_CONFIGURED) {
         auth = firebase.auth();
         db = firebase.firestore();
         console.log('✅ Firebase inicializado correctamente');
+        console.log('   auth.app.options =', auth.app.options);
     } catch (e) {
         console.warn('⚠️ Error al inicializar Firebase:', e);
     }
