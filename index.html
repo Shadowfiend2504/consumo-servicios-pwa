@@ -3,96 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Control de Consumo - Sistema</title>
+  <title>Control de Consumo del Hogar — Sistema</title>
+  <meta name="description" content="Sistema de monitoreo y control de consumo de servicios del hogar: agua, energía, gas e internet.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/estilos.css">
 </head>
-<body style="margin: 0; padding: 0;">
-  <!-- Pantalla de login -->
+<body>
+  <!-- Pantalla de Login -->
   <div id="loginScreen" class="login-screen-layout">
-    <!-- Lado izquierdo - Formulario -->
     <div class="login-form-container">
       <div class="login-form-content">
-        
-        <!-- Logo y Título -->
         <div class="text-center mb-4">
           <div class="brand-logo-large mb-3">
-            <span class="brand-text">UAN</span>
+            <i class="bi bi-house-heart" style="font-size:28px;color:#fff;"></i>
           </div>
-          <h2 style="color: var(--primary); font-weight: 600; font-size: 24px;">Ingreso al Sistema</h2>
-          <p class="text-muted small">Control de Consumo de Servicios</p>
+          <h1 style="color: var(--primary); font-weight: 700; font-size: 22px; margin:0;">Control de Consumo</h1>
+          <p class="text-muted small mt-1">Monitorea tus servicios del hogar</p>
         </div>
 
-        <!-- Formulario de Login -->
         <form id="formularioLogin" onsubmit="login(event)">
           <div class="mb-3">
             <label for="email" class="form-label fw-500 small">Correo Electrónico <span class="text-danger">*</span></label>
             <div class="input-group">
-              <span class="input-group-text bg-light border-end-0">
-                <i class="bi bi-envelope"></i>
-              </span>
-              <input 
-                type="email" 
-                id="email" 
-                class="form-control border-start-0" 
-                placeholder="correo@ejemplo.com"
-                required
-              >
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope"></i></span>
+              <input type="email" id="email" class="form-control border-start-0" placeholder="correo@ejemplo.com" required>
             </div>
-            <small class="text-muted d-block mt-1">Usa el correo con el que te registraste</small>
           </div>
 
           <div class="mb-3">
             <label for="password" class="form-label fw-500 small">Contraseña <span class="text-danger">*</span></label>
             <div class="input-group">
-              <span class="input-group-text bg-light border-end-0">
-                <i class="bi bi-lock"></i>
-              </span>
-              <input 
-                type="password" 
-                id="password" 
-                class="form-control border-start-0" 
-                placeholder="Tu contraseña"
-                required
-              >
-              <button 
-                class="btn btn-outline-secondary border-start-0" 
-                type="button"
-                onclick="togglePasswordVisibilityLogin()"
-              >
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock"></i></span>
+              <input type="password" id="password" class="form-control border-start-0" placeholder="Tu contraseña" required>
+              <button class="btn btn-outline-secondary border-start-0" type="button" onclick="togglePasswordVisibilityLogin()">
                 <i class="bi bi-eye" id="eye-icon-login"></i>
               </button>
             </div>
-            <small class="text-muted d-block mt-1">Tu contraseña es segura y cifrada</small>
           </div>
 
-          <!-- Recordar y Recuperar -->
           <div class="mb-3 d-flex justify-content-between align-items-center">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="recordar">
-              <label class="form-check-label small" for="recordar">
-                Recordar
-              </label>
+              <label class="form-check-label small" for="recordar">Recordar</label>
             </div>
-            <a href="#" class="small text-decoration-none" style="color: var(--accent);">
-              ¿Olvidaste?
-            </a>
           </div>
 
-          <!-- Botón de Login -->
           <button type="submit" class="btn btn-primary w-100 fw-600 mb-2">
             <i class="bi bi-box-arrow-in-right"></i> Entrar
           </button>
         </form>
 
-        <!-- Separador -->
         <div class="position-relative my-3">
           <hr class="my-0" style="opacity: 0.3;">
           <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small" style="font-size: 12px;">O</span>
         </div>
 
-        <!-- Enlace a Registro -->
         <div class="text-center">
           <p class="text-muted small mb-2">¿No tienes cuenta?</p>
           <a href="registro.html" class="btn btn-outline-primary w-100 fw-600 btn-sm">
@@ -100,40 +69,39 @@
           </a>
         </div>
 
-        <!-- Información adicional -->
         <div class="alert alert-info alert-sm mt-3 d-flex align-items-start gap-2" role="alert">
           <i class="bi bi-shield-check" style="flex-shrink: 0; font-size: 14px;"></i>
-          <div class="small" style="font-size: 12px;">
-            Demo: demo@ejemplo.com / Demo@12345
-          </div>
+          <div class="small" style="font-size: 12px;">Demo: demo@ejemplo.com / Demo@12345</div>
         </div>
       </div>
     </div>
-
-    <!-- Lado derecho - Imagen de fondo -->
     <div class="login-image-container"></div>
   </div>
 
-  <!-- Dashboard con menú lateral -->
+  <!-- Dashboard -->
   <div id="dashboard" class="dashboard" style="display: none;">
     <!-- Header -->
     <header class="navbar-header">
-      <div class="d-flex align-items-center h-100">
+      <div class="d-flex align-items-center h-100 w-100">
         <button class="btn-menu-toggle me-3" onclick="toggleMenu()">
           <i class="bi bi-list"></i>
         </button>
         <div class="d-flex align-items-center gap-3">
           <div class="brand-logo">
-            <span class="brand-text">UAN</span>
+            <i class="bi bi-house-heart" style="font-size:20px;"></i>
           </div>
           <span class="page-title">Control de Consumo</span>
         </div>
         <div class="ms-auto d-flex align-items-center gap-3">
-          <div class="user-profile">
-            <img id="userAvatar" src="https://via.placeholder.com/40" alt="Usuario" class="avatar">
-            <span id="userName" class="ms-2">Usuario</span>
+          <div class="header-alerts-badge" id="headerAlertsBadge" onclick="showSection('alertas')" title="Alertas activas" style="cursor:pointer; display:none;">
+            <i class="bi bi-bell-fill"></i>
+            <span class="badge-count" id="alertsBadgeCount">0</span>
           </div>
-          <button class="btn btn-logout" onclick="logout()">
+          <div class="user-profile">
+            <div class="avatar-circle" id="userAvatarCircle">U</div>
+            <span id="userName" class="ms-2 d-none d-md-inline">Usuario</span>
+          </div>
+          <button class="btn btn-logout" onclick="logout()" title="Cerrar sesión">
             <i class="bi bi-box-arrow-right"></i>
           </button>
         </div>
@@ -141,170 +109,107 @@
     </header>
 
     <div class="dashboard-container">
-      <!-- Menú lateral -->
+      <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
         <nav class="sidebar-nav">
-          <!-- Opción de Inicio -->
           <a href="#" onclick="showSection('inicio', event)" class="nav-link active" data-section="inicio">
-            <i class="bi bi-house-door"></i>
-            <span class="nav-text">Inicio</span>
+            <i class="bi bi-grid-1x2"></i>
+            <span class="nav-text">Dashboard</span>
           </a>
 
-          <!-- Secciones principales -->
           <div class="nav-section">
-            <div class="nav-section-title">Información</div>
-            <a href="#" onclick="showSection('consumo', event)" class="nav-link" data-section="consumo">
-              <i class="bi bi-droplet"></i>
-              <span class="nav-text">Consumo de Servicios</span>
+            <div class="nav-section-title">Gestión</div>
+            <a href="#" onclick="showSection('perfil', event)" class="nav-link" data-section="perfil">
+              <i class="bi bi-person-gear"></i>
+              <span class="nav-text">Mi Perfil y Hogar</span>
             </a>
             <a href="#" onclick="showSection('facturas', event)" class="nav-link" data-section="facturas">
-              <i class="bi bi-file-earmark-text"></i>
-              <span class="nav-text">Facturas</span>
+              <i class="bi bi-receipt"></i>
+              <span class="nav-text">Facturas / Lecturas</span>
             </a>
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">Análisis</div>
             <a href="#" onclick="showSection('analisis', event)" class="nav-link" data-section="analisis">
-              <i class="bi bi-graph-up"></i>
-              <span class="nav-text">Análisis</span>
+              <i class="bi bi-graph-up-arrow"></i>
+              <span class="nav-text">Análisis de Consumo</span>
             </a>
             <a href="#" onclick="showSection('alertas', event)" class="nav-link" data-section="alertas">
               <i class="bi bi-bell"></i>
               <span class="nav-text">Alertas</span>
+              <span class="sidebar-badge" id="sidebarAlertsBadge" style="display:none;">0</span>
             </a>
           </div>
 
-          <!-- Para Ver -->
           <div class="nav-section">
-            <div class="nav-section-title">Para Ver</div>
-            <a href="#" onclick="showSection('perfil', event)" class="nav-link" data-section="perfil">
-              <i class="bi bi-person"></i>
-              <span class="nav-text">Mi Perfil</span>
-            </a>
-            <a href="#" onclick="showSection('historial', event)" class="nav-link" data-section="historial">
-              <i class="bi bi-clock-history"></i>
-              <span class="nav-text">Historial</span>
-            </a>
-          </div>
-
-          <!-- Para Hacer -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Hacer</div>
-            <a href="#" onclick="showSection('tareas', event)" class="nav-link" data-section="tareas">
-              <i class="bi bi-check-circle"></i>
-              <span class="nav-text">Tareas Pendientes</span>
-            </a>
-          </div>
-
-          <!-- Para Solicitar -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Solicitar</div>
-            <a href="#" onclick="showSection('solicitudes', event)" class="nav-link" data-section="solicitudes">
-              <i class="bi bi-file-earmark-plus"></i>
-              <span class="nav-text">Nuevas Solicitudes</span>
-            </a>
-            <a href="#" onclick="showSection('mis-solicitudes', event)" class="nav-link" data-section="mis-solicitudes">
-              <i class="bi bi-inbox"></i>
-              <span class="nav-text">Mis Solicitudes</span>
-            </a>
-          </div>
-
-          <!-- Para Descargar -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Descargar</div>
-            <a href="#" onclick="showSection('descargas', event)" class="nav-link" data-section="descargas">
-              <i class="bi bi-download"></i>
+            <div class="nav-section-title">Informes</div>
+            <a href="#" onclick="showSection('reportes', event)" class="nav-link" data-section="reportes">
+              <i class="bi bi-file-earmark-bar-graph"></i>
               <span class="nav-text">Reportes</span>
             </a>
           </div>
         </nav>
       </aside>
 
-      <!-- Contenido principal -->
+      <!-- Main Content -->
       <main class="main-content">
         <div class="content-area">
-          <!-- Sección de Inicio -->
+
+          <!-- Dashboard / Inicio -->
           <section id="inicio-section" class="content-section active">
-            <h1>Inicio</h1>
-            <p class="text-muted">Bienvenido al sistema de control de consumo de servicios.</p>
-            <div class="row mt-4">
-              <div class="col-md-6 mb-3">
-                <div class="card-stat">
-                  <div class="stat-icon"><i class="bi bi-droplet"></i></div>
-                  <div class="stat-content">
-                    <div class="stat-number" id="quick-consumo">0</div>
-                    <div class="stat-label">Consumo Actual</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="card-stat">
-                  <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
-                  <div class="stat-content">
-                    <div class="stat-number" id="quick-gasto">$0</div>
-                    <div class="stat-label">Gasto Este Mes</div>
-                  </div>
-                </div>
-              </div>
+            <div class="section-header">
+              <h1><i class="bi bi-grid-1x2"></i> Dashboard</h1>
+              <p class="text-muted">Resumen general de consumo de servicios del hogar</p>
             </div>
+            <div id="inicio-content">Cargando...</div>
           </section>
 
-          <!-- Sección de Consumo -->
-          <section id="consumo-section" class="content-section">
-            <h1>Consumo de Servicios</h1>
-            <div id="consumo-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Facturas -->
-          <section id="facturas-section" class="content-section">
-            <h1>Facturas</h1>
-            <div id="facturas-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Análisis -->
-          <section id="analisis-section" class="content-section">
-            <h1>Análisis</h1>
-            <div id="analisis-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Alertas -->
-          <section id="alertas-section" class="content-section">
-            <h1>Alertas</h1>
-            <div id="alertas-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Perfil -->
+          <!-- Perfil -->
           <section id="perfil-section" class="content-section">
-            <h1>Mi Perfil</h1>
+            <div class="section-header">
+              <h1><i class="bi bi-person-gear"></i> Mi Perfil y Hogar</h1>
+              <p class="text-muted">Configura tu perfil, servicios activos y umbrales de alerta</p>
+            </div>
             <div id="perfil-content">Cargando...</div>
           </section>
 
-          <!-- Sección de Historial -->
-          <section id="historial-section" class="content-section">
-            <h1>Historial</h1>
-            <div id="historial-content">Cargando...</div>
+          <!-- Facturas -->
+          <section id="facturas-section" class="content-section">
+            <div class="section-header">
+              <h1><i class="bi bi-receipt"></i> Facturas y Lecturas</h1>
+              <p class="text-muted">Registra y consulta el historial de consumo y facturación</p>
+            </div>
+            <div id="facturas-content">Cargando...</div>
           </section>
 
-          <!-- Sección de Tareas -->
-          <section id="tareas-section" class="content-section">
-            <h1>Tareas Pendientes</h1>
-            <div id="tareas-content">Cargando...</div>
+          <!-- Análisis -->
+          <section id="analisis-section" class="content-section">
+            <div class="section-header">
+              <h1><i class="bi bi-graph-up-arrow"></i> Análisis de Consumo</h1>
+              <p class="text-muted">Comparativas, variaciones y tendencias de tus servicios</p>
+            </div>
+            <div id="analisis-content">Cargando...</div>
           </section>
 
-          <!-- Sección de Solicitudes -->
-          <section id="solicitudes-section" class="content-section">
-            <h1>Nuevas Solicitudes</h1>
-            <div id="solicitudes-content">Cargando...</div>
+          <!-- Alertas -->
+          <section id="alertas-section" class="content-section">
+            <div class="section-header">
+              <h1><i class="bi bi-bell"></i> Alertas y Seguimiento</h1>
+              <p class="text-muted">Notificaciones de sobreconsumo, seguimiento y sugerencias</p>
+            </div>
+            <div id="alertas-content">Cargando...</div>
           </section>
 
-          <!-- Sección de Mis Solicitudes -->
-          <section id="mis-solicitudes-section" class="content-section">
-            <h1>Mis Solicitudes</h1>
-            <div id="mis-solicitudes-content">Cargando...</div>
+          <!-- Reportes -->
+          <section id="reportes-section" class="content-section">
+            <div class="section-header">
+              <h1><i class="bi bi-file-earmark-bar-graph"></i> Reportes</h1>
+              <p class="text-muted">Genera y descarga informes de consumo</p>
+            </div>
+            <div id="reportes-content">Cargando...</div>
           </section>
 
-          <!-- Sección de Descargas -->
-          <section id="descargas-section" class="content-section">
-            <h1>Reportes</h1>
-            <div id="descargas-content">Cargando...</div>
-          </section>
         </div>
       </main>
     </div>
@@ -317,214 +222,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="js/alertas.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
-</body>
-</html>
-
-  <!-- Dashboard con menú lateral -->
-  <div id="dashboard" class="dashboard" style="display: none;">
-    <!-- Header -->
-    <header class="navbar-header">
-      <div class="d-flex align-items-center h-100">
-        <button class="btn-menu-toggle me-3" onclick="toggleMenu()">
-          <i class="bi bi-list"></i>
-        </button>
-        <div class="d-flex align-items-center gap-3">
-          <div class="brand-logo">
-            <span class="brand-text">UAN</span>
-          </div>
-          <span class="page-title">Control de Consumo</span>
-        </div>
-        <div class="ms-auto d-flex align-items-center gap-3">
-          <div class="user-profile">
-            <img id="userAvatar" src="https://via.placeholder.com/40" alt="Usuario" class="avatar">
-            <span id="userName" class="ms-2">Usuario</span>
-          </div>
-          <button class="btn btn-logout" onclick="logout()">
-            <i class="bi bi-box-arrow-right"></i>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <div class="dashboard-container">
-      <!-- Menú lateral -->
-      <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav">
-          <!-- Opción de Inicio -->
-          <a href="#" onclick="showSection('inicio', event)" class="nav-link active" data-section="inicio">
-            <i class="bi bi-house-door"></i>
-            <span class="nav-text">Inicio</span>
-          </a>
-
-          <!-- Secciones principales -->
-          <div class="nav-section">
-            <div class="nav-section-title">Información</div>
-            <a href="#" onclick="showSection('consumo', event)" class="nav-link" data-section="consumo">
-              <i class="bi bi-droplet"></i>
-              <span class="nav-text">Consumo de Servicios</span>
-            </a>
-            <a href="#" onclick="showSection('facturas', event)" class="nav-link" data-section="facturas">
-              <i class="bi bi-file-earmark-text"></i>
-              <span class="nav-text">Facturas</span>
-            </a>
-            <a href="#" onclick="showSection('analisis', event)" class="nav-link" data-section="analisis">
-              <i class="bi bi-graph-up"></i>
-              <span class="nav-text">Análisis</span>
-            </a>
-            <a href="#" onclick="showSection('alertas', event)" class="nav-link" data-section="alertas">
-              <i class="bi bi-bell"></i>
-              <span class="nav-text">Alertas</span>
-            </a>
-          </div>
-
-          <!-- Para Ver -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Ver</div>
-            <a href="#" onclick="showSection('perfil', event)" class="nav-link" data-section="perfil">
-              <i class="bi bi-person"></i>
-              <span class="nav-text">Mi Perfil</span>
-            </a>
-            <a href="#" onclick="showSection('historial', event)" class="nav-link" data-section="historial">
-              <i class="bi bi-clock-history"></i>
-              <span class="nav-text">Historial</span>
-            </a>
-          </div>
-
-          <!-- Para Hacer -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Hacer</div>
-            <a href="#" onclick="showSection('tareas', event)" class="nav-link" data-section="tareas">
-              <i class="bi bi-check-circle"></i>
-              <span class="nav-text">Tareas Pendientes</span>
-            </a>
-          </div>
-
-          <!-- Para Solicitar -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Solicitar</div>
-            <a href="#" onclick="showSection('solicitudes', event)" class="nav-link" data-section="solicitudes">
-              <i class="bi bi-file-earmark-plus"></i>
-              <span class="nav-text">Nuevas Solicitudes</span>
-            </a>
-            <a href="#" onclick="showSection('mis-solicitudes', event)" class="nav-link" data-section="mis-solicitudes">
-              <i class="bi bi-inbox"></i>
-              <span class="nav-text">Mis Solicitudes</span>
-            </a>
-          </div>
-
-          <!-- Para Descargar -->
-          <div class="nav-section">
-            <div class="nav-section-title">Para Descargar</div>
-            <a href="#" onclick="showSection('descargas', event)" class="nav-link" data-section="descargas">
-              <i class="bi bi-download"></i>
-              <span class="nav-text">Reportes</span>
-            </a>
-          </div>
-        </nav>
-      </aside>
-
-      <!-- Contenido principal -->
-      <main class="main-content">
-        <div class="content-area">
-          <!-- Sección de Inicio -->
-          <section id="inicio-section" class="content-section active">
-            <h1>Inicio</h1>
-            <p class="text-muted">Bienvenido al sistema de control de consumo de servicios.</p>
-            <div class="row mt-4">
-              <div class="col-md-6 mb-3">
-                <div class="card-stat">
-                  <div class="stat-icon"><i class="bi bi-droplet"></i></div>
-                  <div class="stat-content">
-                    <div class="stat-number" id="quick-consumo">0</div>
-                    <div class="stat-label">Consumo Actual</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="card-stat">
-                  <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
-                  <div class="stat-content">
-                    <div class="stat-number" id="quick-gasto">$0</div>
-                    <div class="stat-label">Gasto Este Mes</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Sección de Consumo -->
-          <section id="consumo-section" class="content-section">
-            <h1>Consumo de Servicios</h1>
-            <div id="consumo-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Facturas -->
-          <section id="facturas-section" class="content-section">
-            <h1>Facturas</h1>
-            <div id="facturas-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Análisis -->
-          <section id="analisis-section" class="content-section">
-            <h1>Análisis</h1>
-            <div id="analisis-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Alertas -->
-          <section id="alertas-section" class="content-section">
-            <h1>Alertas</h1>
-            <div id="alertas-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Perfil -->
-          <section id="perfil-section" class="content-section">
-            <h1>Mi Perfil</h1>
-            <div id="perfil-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Historial -->
-          <section id="historial-section" class="content-section">
-            <h1>Historial</h1>
-            <div id="historial-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Tareas -->
-          <section id="tareas-section" class="content-section">
-            <h1>Tareas Pendientes</h1>
-            <div id="tareas-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Solicitudes -->
-          <section id="solicitudes-section" class="content-section">
-            <h1>Nuevas Solicitudes</h1>
-            <div id="solicitudes-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Mis Solicitudes -->
-          <section id="mis-solicitudes-section" class="content-section">
-            <h1>Mis Solicitudes</h1>
-            <div id="mis-solicitudes-content">Cargando...</div>
-          </section>
-
-          <!-- Sección de Descargas -->
-          <section id="descargas-section" class="content-section">
-            <h1>Reportes</h1>
-            <div id="descargas-content">Cargando...</div>
-          </section>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Toast container -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
-    <div id="toast-container"></div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/alertas.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
