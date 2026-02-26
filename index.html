@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Control de Consumo del Hogar — Sistema</title>
-  <meta name="description" content="Sistema de monitoreo y control de consumo de servicios del hogar: agua, energía, gas e internet.">
+  <meta name="description"
+    content="Sistema de monitoreo y control de consumo de servicios del hogar: agua, energía, gas e internet.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,6 +14,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/estilos.css">
 </head>
+
 <body>
   <!-- Pantalla de Login -->
   <div id="loginScreen" class="login-screen-layout">
@@ -27,10 +30,12 @@
 
         <form id="formularioLogin" onsubmit="login(event)">
           <div class="mb-3">
-            <label for="email" class="form-label fw-500 small">Correo Electrónico <span class="text-danger">*</span></label>
+            <label for="email" class="form-label fw-500 small">Correo Electrónico <span
+                class="text-danger">*</span></label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope"></i></span>
-              <input type="email" id="email" class="form-control border-start-0" placeholder="correo@ejemplo.com" required>
+              <input type="email" id="email" class="form-control border-start-0" placeholder="correo@ejemplo.com"
+                required>
             </div>
           </div>
 
@@ -38,8 +43,10 @@
             <label for="password" class="form-label fw-500 small">Contraseña <span class="text-danger">*</span></label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock"></i></span>
-              <input type="password" id="password" class="form-control border-start-0" placeholder="Tu contraseña" required>
-              <button class="btn btn-outline-secondary border-start-0" type="button" onclick="togglePasswordVisibilityLogin()">
+              <input type="password" id="password" class="form-control border-start-0" placeholder="Tu contraseña"
+                required>
+              <button class="btn btn-outline-secondary border-start-0" type="button"
+                onclick="togglePasswordVisibilityLogin()">
                 <i class="bi bi-eye" id="eye-icon-login"></i>
               </button>
             </div>
@@ -59,7 +66,8 @@
 
         <div class="position-relative my-3">
           <hr class="my-0" style="opacity: 0.3;">
-          <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small" style="font-size: 12px;">O</span>
+          <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small"
+            style="font-size: 12px;">O</span>
         </div>
 
         <div class="text-center">
@@ -93,7 +101,8 @@
           <span class="page-title">Control de Consumo</span>
         </div>
         <div class="ms-auto d-flex align-items-center gap-3">
-          <div class="header-alerts-badge" id="headerAlertsBadge" onclick="showSection('alertas')" title="Alertas activas" style="cursor:pointer; display:none;">
+          <div class="header-alerts-badge" id="headerAlertsBadge" onclick="showSection('alertas')"
+            title="Alertas activas" style="cursor:pointer; display:none;">
             <i class="bi bi-bell-fill"></i>
             <span class="badge-count" id="alertsBadgeCount">0</span>
           </div>
@@ -222,8 +231,16 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- App Scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-data.js"></script>
   <script src="js/alertas.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 </html>

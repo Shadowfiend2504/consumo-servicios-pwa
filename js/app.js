@@ -9,18 +9,19 @@ const SERVICE_META = {
   internet: { label:'Internet', icon:'bi-wifi',           unit:'Mbps', emoji:'📶', cls:'internet' }
 };
 
-function getFacturas(){ return JSON.parse(localStorage.getItem('facturas')||'[]'); }
-function getPerfil(){
-  return JSON.parse(localStorage.getItem('perfil')) || {
-    nombre:'', correo: localStorage.getItem('userEmail')||'', zona:'', tipo:'',
-    servicios:{agua:true,energia:true,gas:true,internet:true},
-    umbrales:{agua:{consumo:0,valor:0},energia:{consumo:0,valor:0},gas:{consumo:0,valor:0},internet:{consumo:0,valor:0}}
-  };
+// data access now goes through DataService which handles Firestore/localStorage logic
+async function getFacturas(){
+  return await DataService.getFacturas();
 }
-function savePerfil(p){ localStorage.setItem('perfil',JSON.stringify(p)); }
+async function getPerfil(){
+  return await DataService.getPerfil();
+}
+async function savePerfil(p){
+  return await DataService.savePerfil(p);
+}
 
 // ============ NAVIGATION ============
-function showSection(name, ev){
+async function showSection(name, ev){
   if(ev) ev.preventDefault();
   document.querySelectorAll('.content-section').forEach(s=>s.classList.remove('active'));
   const t=document.getElementById(name+'-section');
@@ -28,15 +29,15 @@ function showSection(name, ev){
   document.querySelectorAll('.sidebar .nav-link').forEach(l=>l.classList.remove('active'));
   const a=document.querySelector(`[data-section="${name}"]`);
   if(a) a.classList.add('active');
-  loadSectionContent(name);
+  await loadSectionContent(name);
   if(window.innerWidth<=768) closeMenu();
 }
 
-function loadSectionContent(name){
+async function loadSectionContent(name){
   const c=document.getElementById(name+'-content');
   if(!c) return;
   const map={inicio:loadInicio,perfil:loadPerfil,facturas:loadFacturas,analisis:loadAnalisis,alertas:loadAlertasSection,reportes:loadReportes};
-  if(map[name]) map[name](c);
+  if(map[name]) await map[name](c);
 }
 
 function toggleMenu(){
@@ -53,9 +54,10 @@ document.addEventListener('click',e=>{
 });
 
 // ============ DASHBOARD / INICIO ============
-function loadInicio(c){
-  const facturas=getFacturas(), perfil=getPerfil();
-  const activos=Object.keys(perfil.servicios).filter(k=>perfil.servicios[k]);
+async function loadInicio(c){
+  const facturas = await getFacturas();
+  const perfil = await getPerfil();
+  const activos = Object.keys(perfil.servicios).filter(k=>perfil.servicios[k]);
 
   // Summary cards
   let cardsHtml='<div class="gap-grid gap-grid-4 mb-4">';
@@ -86,7 +88,7 @@ function loadInicio(c){
   cardsHtml+='</div>';
 
   // Alerts count
-  const alertas=JSON.parse(localStorage.getItem('alertas')||'[]');
+  const alertas=await DataService.getAlertas();
   const nuevas=alertas.filter(a=>a.estado==='nueva').length;
 
   // Chart
@@ -112,7 +114,7 @@ function loadInicio(c){
   }
 
   c.innerHTML=alertBanner+cardsHtml+chartHtml;
-  updateAlertBadges();
+  await updateAlertBadges();
   renderDashCharts(facturas, activos);
 }
 
@@ -149,9 +151,9 @@ function renderDashCharts(facturas, activos){
   }
 }
 
-function updateAlertBadges(){
-  const alertas=JSON.parse(localStorage.getItem('alertas')||'[]');
-  const n=alertas.filter(a=>a.estado==='nueva').length;
+async function updateAlertBadges(){
+  const alertas = await DataService.getAlertas();
+  const n = alertas.filter(a=>a.estado==='nueva').length;
   const hb=document.getElementById('headerAlertsBadge'),hc=document.getElementById('alertsBadgeCount');
   const sb=document.getElementById('sidebarAlertsBadge');
   if(hb){ hb.style.display=n>0?'block':'none'; if(hc) hc.textContent=n; }
@@ -159,8 +161,8 @@ function updateAlertBadges(){
 }
 
 // ============ PERFIL ============
-function loadPerfil(c){
-  const p=getPerfil();
+async function loadPerfil(c){
+  const p=await getPerfil();
   p.correo=p.correo||localStorage.getItem('userEmail')||'';
   let svcToggles='';
   Object.keys(SERVICE_META).forEach(svc=>{
@@ -216,8 +218,8 @@ function loadPerfil(c){
   });
 }
 
-window.guardarPerfil=function(){
-  const p=getPerfil();
+window.guardarPerfil=async function(){
+  const p=await getPerfil();
   p.nombre=document.getElementById('pNombre').value;
   p.correo=document.getElementById('pCorreo').value;
   p.zona=document.getElementById('pZona').value;
@@ -231,13 +233,13 @@ window.guardarPerfil=function(){
     if(uc) p.umbrales[svc].consumo=Number(uc.value)||0;
     if(uv) p.umbrales[svc].valor=Number(uv.value)||0;
   });
-  savePerfil(p);
+  await savePerfil(p);
   if(typeof showToast==='function') showToast('Perfil guardado correctamente',{type:'success'});
 };
 
 // ============ FACTURAS ============
-function loadFacturas(c){
-  const facturas=getFacturas();
+async function loadFacturas(c){
+  const facturas=await getFacturas();
   let filterHtml=`
     <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
       <div><label class="form-label small mb-1">Servicio</label><select class="form-select form-select-sm" id="filtroSvcFact" style="width:150px">
@@ -246,16 +248,18 @@ function loadFacturas(c){
       <a href="registrar.html" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-circle me-1"></i>Registrar Factura</a>
     </div>`;
 
-  if(facturas.length===0){
+  if((facturas||[]).length===0){
     c.innerHTML=filterHtml+`<div class="empty-state"><i class="bi bi-receipt d-block"></i><h5>Sin facturas</h5><p>Registra tu primera factura para comenzar</p><a href="registrar.html" class="btn btn-primary mt-2"><i class="bi bi-plus-circle me-1"></i>Registrar Factura</a></div>`;
     return;
   }
 
   c.innerHTML=filterHtml+'<div id="facturasTable"></div>';
   renderFacturasTable(facturas,'');
-  document.getElementById('filtroSvcFact').addEventListener('change',e=>{
-    const filtered=e.target.value?facturas.filter(f=>f.servicio===e.target.value):facturas;
-    renderFacturasTable(filtered,e.target.value);
+  document.getElementById('filtroSvcFact').addEventListener('change',async e=>{
+    const filtro = e.target.value;
+    const all = await getFacturas();
+    const filtered = filtro? all.filter(f=>f.servicio===filtro): all;
+    renderFacturasTable(filtered,filtro);
   });
 }
 
@@ -283,24 +287,26 @@ function renderFacturasTable(facturas){
   </div></div>`;
 }
 
-window.marcarPagada=function(id){
-  const f=getFacturas(); const i=f.findIndex(x=>x.id===id);
-  if(i===-1) return; f[i].fecha_pago=new Date().toISOString();
-  localStorage.setItem('facturas',JSON.stringify(f));
+window.marcarPagada=async function(id){
+  const f = await getFacturas();
+  const i=f.findIndex(x=>x.id===id);
+  if(i===-1) return;
+  const fecha = new Date().toISOString();
+  await DataService.updateFactura(id,{fecha_pago:fecha});
   showToast('Factura marcada como pagada',{type:'success'});
-  loadFacturas(document.getElementById('facturas-content'));
+  await loadFacturas(document.getElementById('facturas-content'));
 };
 
-window.eliminarFactura=function(id){
+window.eliminarFactura=async function(id){
   if(!confirm('¿Eliminar esta factura?')) return;
-  localStorage.setItem('facturas',JSON.stringify(getFacturas().filter(f=>f.id!==id)));
+  await DataService.deleteFactura(id);
   showToast('Factura eliminada',{type:'warning'});
-  loadFacturas(document.getElementById('facturas-content'));
+  await loadFacturas(document.getElementById('facturas-content'));
 };
 
 // ============ ANÁLISIS ============
-function loadAnalisis(c){
-  const facturas=getFacturas();
+async function loadAnalisis(c){
+  const facturas=await getFacturas();
   if(facturas.length<1){
     c.innerHTML=`<div class="empty-state"><i class="bi bi-graph-up-arrow d-block"></i><h5>Sin datos</h5><p>Registra facturas para ver el análisis</p></div>`;
     return;
@@ -370,10 +376,11 @@ function loadAnalisis(c){
 }
 
 // ============ ALERTAS ============
-function loadAlertasSection(c){
-  const facturas=getFacturas(), perfil=getPerfil();
-  generateAlerts(facturas,perfil);
-  const alertas=JSON.parse(localStorage.getItem('alertas')||'[]');
+async function loadAlertasSection(c){
+  const facturas=await getFacturas();
+  const perfil=await getPerfil();
+  await generateAlerts(facturas,perfil);
+  const alertas=await DataService.getAlertas();
 
   let filterHtml=`<div class="d-flex flex-wrap gap-2 mb-3">
     <select class="form-select form-select-sm" id="filtroSvcAlert" style="width:150px"><option value="">Todos</option>
@@ -395,10 +402,10 @@ function loadAlertasSection(c){
   renderSugerencias();
 }
 
-function filterAlerts(){
+async function filterAlerts(){
   const svc=document.getElementById('filtroSvcAlert').value;
   const est=document.getElementById('filtroEstadoAlert').value;
-  let alertas=JSON.parse(localStorage.getItem('alertas')||'[]');
+  let alertas=await DataService.getAlertas();
   if(svc) alertas=alertas.filter(a=>a.servicio===svc);
   if(est) alertas=alertas.filter(a=>a.estado===est);
   renderAlertsList(alertas);
@@ -441,29 +448,28 @@ function renderSugerencias(){
   el.innerHTML='<h6 class="mb-3"><i class="bi bi-lightbulb me-2"></i>Sugerencias de ahorro</h6>'+tips.map(t=>`<div class="suggestion-card mb-2"><i class="bi ${t.icon}"></i><div class="text">${t.text}</div></div>`).join('');
 }
 
-window.cambiarEstadoAlerta=function(idx,estado){
-  const arr=JSON.parse(localStorage.getItem('alertas')||'[]');
-  if(arr[idx]){ arr[idx].estado=estado; localStorage.setItem('alertas',JSON.stringify(arr)); }
+window.cambiarEstadoAlerta=async function(idx,estado){
+  await DataService.updateAlerta(idx,{estado});
   showToast(`Alerta marcada como ${estado}`,{type:'success'});
-  loadAlertasSection(document.getElementById('alertas-content'));
-  updateAlertBadges();
+  await loadAlertasSection(document.getElementById('alertas-content'));
+  await updateAlertBadges();
 };
 
-window.limpiarTodasAlertas=function(){
+window.limpiarTodasAlertas=async function(){
   if(!confirm('¿Limpiar todas las alertas?')) return;
-  localStorage.removeItem('alertas');
+  await DataService.clearAlertas();
   showToast('Alertas limpiadas',{type:'info'});
-  loadAlertasSection(document.getElementById('alertas-content'));
-  updateAlertBadges();
+  await loadAlertasSection(document.getElementById('alertas-content'));
+  await updateAlertBadges();
 };
 
-function generateAlerts(facturas,perfil){
+async function generateAlerts(facturas,perfil){
   // Only generate if new invoices detected (simple check)
   const porSvc={};
   facturas.forEach(f=>{ if(!porSvc[f.servicio]) porSvc[f.servicio]=[]; porSvc[f.servicio].push(f); });
   Object.values(porSvc).forEach(arr=>arr.sort((a,b)=>(a.periodo||'').localeCompare(b.periodo||'')));
 
-  const existing=JSON.parse(localStorage.getItem('alertas')||'[]');
+  const existing=await DataService.getAlertas();
   const existingKeys=new Set(existing.map(a=>a._key||''));
 
   Object.keys(porSvc).forEach(svc=>{
@@ -477,6 +483,7 @@ function generateAlerts(facturas,perfil){
         if(!existingKeys.has(key)){
           const a={servicio:svc,tipo:'exceso',mensaje:`Consumo de ${cur.consumo} supera umbral de ${umb.consumo}`,fecha:new Date().toISOString(),estado:'nueva',_key:key};
           existing.push(a); existingKeys.add(key);
+          await DataService.saveAlerta(a);
         }
       }
       // Variation check (>20% vs previous)
@@ -489,6 +496,7 @@ function generateAlerts(facturas,perfil){
             if(!existingKeys.has(key)){
               const a={servicio:svc,tipo:'variación',mensaje:`Aumento de ${pct.toFixed(1)}% vs período anterior (${prev.periodo})`,fecha:new Date().toISOString(),estado:'nueva',_key:key};
               existing.push(a); existingKeys.add(key);
+              await DataService.saveAlerta(a);
             }
           }
         }
@@ -499,8 +507,8 @@ function generateAlerts(facturas,perfil){
 }
 
 // ============ REPORTES ============
-function loadReportes(c){
-  const facturas=getFacturas();
+async function loadReportes(c){
+  const facturas=await getFacturas();
   c.innerHTML=`
     <div class="gap-grid gap-grid-2">
       <div class="data-card">
@@ -529,8 +537,8 @@ function loadReportes(c){
     </div>`;
 }
 
-window.exportarCSV=function(){
-  let data=getFacturas();
+window.exportarCSV=async function(){
+  let data=await getFacturas();
   const svc=document.getElementById('repSvc').value;
   if(svc) data=data.filter(f=>f.servicio===svc);
   if(data.length===0){ showToast('No hay datos para exportar',{type:'warning'}); return; }
@@ -543,8 +551,8 @@ window.exportarCSV=function(){
   showToast('Reporte descargado',{type:'success'});
 };
 
-window.exportarAlertas=function(){
-  const alertas=JSON.parse(localStorage.getItem('alertas')||'[]');
+window.exportarAlertas=async function(){
+  const alertas=await DataService.getAlertas();
   if(alertas.length===0){ showToast('No hay alertas para exportar',{type:'warning'}); return; }
   let csv='Servicio,Tipo,Mensaje,Fecha,Estado\n';
   alertas.forEach(a=>{ csv+=`${a.servicio},${a.tipo},"${a.mensaje}",${a.fecha||''},${a.estado}\n`; });
@@ -570,7 +578,7 @@ function updateUserInfo(){
   if(av) av.textContent=name.charAt(0).toUpperCase();
 }
 
-function initDashboard(){ updateUserInfo(); showSection('inicio'); }
+async function initDashboard(){ updateUserInfo(); await showSection('inicio'); }
 
 document.addEventListener('DOMContentLoaded',()=>{
   const d=document.getElementById('dashboard');

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,13 +9,14 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/estilos.css">
 </head>
+
 <body style="margin: 0; padding: 0;">
   <!-- Pantalla de Registro -->
   <div class="login-screen-layout">
     <!-- Lado izquierdo - Formulario -->
     <div class="login-form-container">
       <div class="login-form-content">
-        
+
         <!-- Logo y Título -->
         <div class="text-center mb-3">
           <div class="brand-logo-large mb-3">
@@ -25,21 +27,16 @@
         </div>
 
         <form id="formularioRegistro" onsubmit="registrarUsuario(event)">
-          
+
           <!-- Nombre Completo -->
           <div class="mb-2">
-            <label for="nombre" class="form-label fw-500 small">Nombre Completo <span class="text-danger">*</span></label>
+            <label for="nombre" class="form-label fw-500 small">Nombre Completo <span
+                class="text-danger">*</span></label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0">
                 <i class="bi bi-person"></i>
               </span>
-              <input 
-                type="text" 
-                id="nombre" 
-                class="form-control border-start-0" 
-                placeholder="Tu nombre"
-                required
-              >
+              <input type="text" id="nombre" class="form-control border-start-0" placeholder="Tu nombre" required>
             </div>
           </div>
 
@@ -50,13 +47,8 @@
               <span class="input-group-text bg-light border-end-0">
                 <i class="bi bi-envelope"></i>
               </span>
-              <input 
-                type="email" 
-                id="email" 
-                class="form-control border-start-0" 
-                placeholder="correo@ejemplo.com"
-                required
-              >
+              <input type="email" id="email" class="form-control border-start-0" placeholder="correo@ejemplo.com"
+                required>
             </div>
           </div>
 
@@ -67,13 +59,8 @@
               <span class="input-group-text bg-light border-end-0">
                 <i class="bi bi-telephone"></i>
               </span>
-              <input 
-                type="tel" 
-                id="telefono" 
-                class="form-control border-start-0" 
-                placeholder="+57 300 123 4567"
-                required
-              >
+              <input type="tel" id="telefono" class="form-control border-start-0" placeholder="+57 300 123 4567"
+                required>
             </div>
           </div>
 
@@ -84,13 +71,7 @@
               <span class="input-group-text bg-light border-end-0">
                 <i class="bi bi-credit-card"></i>
               </span>
-              <input 
-                type="text" 
-                id="documento" 
-                class="form-control border-start-0" 
-                placeholder="1234567890"
-                required
-              >
+              <input type="text" id="documento" class="form-control border-start-0" placeholder="1234567890" required>
             </div>
           </div>
 
@@ -101,19 +82,10 @@
               <span class="input-group-text bg-light border-end-0">
                 <i class="bi bi-lock"></i>
               </span>
-              <input 
-                type="password" 
-                id="password" 
-                class="form-control border-start-0" 
-                placeholder="Mín. 8 caracteres"
-                minlength="8"
-                required
-              >
-              <button 
-                class="btn btn-outline-secondary border-start-0" 
-                type="button"
-                onclick="togglePasswordVisibility('password')"
-              >
+              <input type="password" id="password" class="form-control border-start-0" placeholder="Mín. 8 caracteres"
+                minlength="8" required>
+              <button class="btn btn-outline-secondary border-start-0" type="button"
+                onclick="togglePasswordVisibility('password')">
                 <i class="bi bi-eye" id="eye-icon"></i>
               </button>
             </div>
@@ -124,24 +96,16 @@
 
           <!-- Confirmar Contraseña -->
           <div class="mb-2">
-            <label for="passwordConfirm" class="form-label fw-500 small">Confirmar <span class="text-danger">*</span></label>
+            <label for="passwordConfirm" class="form-label fw-500 small">Confirmar <span
+                class="text-danger">*</span></label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0">
                 <i class="bi bi-lock-check"></i>
               </span>
-              <input 
-                type="password" 
-                id="passwordConfirm" 
-                class="form-control border-start-0" 
-                placeholder="Repite tu contraseña"
-                minlength="8"
-                required
-              >
-              <button 
-                class="btn btn-outline-secondary border-start-0" 
-                type="button"
-                onclick="togglePasswordVisibility('passwordConfirm')"
-              >
+              <input type="password" id="passwordConfirm" class="form-control border-start-0"
+                placeholder="Repite tu contraseña" minlength="8" required>
+              <button class="btn btn-outline-secondary border-start-0" type="button"
+                onclick="togglePasswordVisibility('passwordConfirm')">
                 <i class="bi bi-eye" id="eye-icon-confirm"></i>
               </button>
             </div>
@@ -150,14 +114,9 @@
           <!-- Términos y Condiciones -->
           <div class="mb-3 mt-3">
             <div class="form-check">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="terminos" 
-                required
-              >
+              <input class="form-check-input" type="checkbox" id="terminos" required>
               <label class="form-check-label small" for="terminos">
-                Acepto los <a href="#" class="text-decoration-none" style="color: var(--accent);">términos</a> y 
+                Acepto los <a href="#" class="text-decoration-none" style="color: var(--accent);">términos</a> y
                 <a href="#" class="text-decoration-none" style="color: var(--accent);">privacidad</a>
               </label>
             </div>
@@ -172,7 +131,7 @@
         <!-- Link a Login -->
         <div class="text-center" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px;">
           <p class="text-muted mb-0 small">
-            ¿Ya tienes cuenta? 
+            ¿Ya tienes cuenta?
             <a href="index.html" class="text-decoration-none fw-600" style="color: var(--accent);">
               Inicia sesión
             </a>
@@ -200,58 +159,31 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
   <script>
-    /**
-     * Toggle visibilidad de contraseña
-     */
     function togglePasswordVisibility(fieldId) {
       const field = document.getElementById(fieldId);
       const icon = document.getElementById(fieldId === 'password' ? 'eye-icon' : 'eye-icon-confirm');
-      
-      if (field.type === 'password') {
-        field.type = 'text';
-        icon.classList.remove('bi-eye');
-        icon.classList.add('bi-eye-slash');
-      } else {
-        field.type = 'password';
-        icon.classList.remove('bi-eye-slash');
-        icon.classList.add('bi-eye');
-      }
+      if (field.type === 'password') { field.type = 'text'; icon.classList.replace('bi-eye', 'bi-eye-slash'); }
+      else { field.type = 'password'; icon.classList.replace('bi-eye-slash', 'bi-eye'); }
     }
 
-    /**
-     * Validar contraseña
-     */
-    function validarContraseña(password) {
-      if (password.length < 8) {
-        return { valida: false, mensaje: 'Mínimo 8 caracteres' };
-      }
-      if (!/[A-Z]/.test(password)) {
-        return { valida: false, mensaje: 'Incluye una mayúscula' };
-      }
-      if (!/[0-9]/.test(password)) {
-        return { valida: false, mensaje: 'Incluye un número' };
-      }
-      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-        return { valida: false, mensaje: 'Incluye un símbolo especial' };
-      }
-      return { valida: true };
+    function validarPassword(p) {
+      if (p.length < 8) return { ok: false, msg: 'Mínimo 8 caracteres' };
+      if (!/[A-Z]/.test(p)) return { ok: false, msg: 'Incluye una mayúscula' };
+      if (!/[0-9]/.test(p)) return { ok: false, msg: 'Incluye un número' };
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(p)) return { ok: false, msg: 'Incluye un símbolo especial' };
+      return { ok: true };
     }
 
-    /**
-     * Validar email
-     */
-    function validarEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
-    }
+    function validarEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
-    /**
-     * Registrar Usuario
-     */
-    function registrarUsuario(event) {
+    async function registrarUsuario(event) {
       event.preventDefault();
-
       const nombre = document.getElementById('nombre').value.trim();
       const email = document.getElementById('email').value.trim();
       const telefono = document.getElementById('telefono').value.trim();
@@ -260,149 +192,77 @@
       const passwordConfirm = document.getElementById('passwordConfirm').value;
       const terminos = document.getElementById('terminos').checked;
 
-      // Validaciones
-      if (!nombre) {
-        showToast('Ingresa tu nombre completo', { type: 'warning' });
+      if (!nombre) { showToast('Ingresa tu nombre', { type: 'warning' }); return; }
+      if (!email || !validarEmail(email)) { showToast('Correo inválido', { type: 'warning' }); return; }
+      if (!telefono) { showToast('Ingresa tu teléfono', { type: 'warning' }); return; }
+      if (!documento) { showToast('Ingresa tu documento', { type: 'warning' }); return; }
+      const v = validarPassword(password);
+      if (!v.ok) { showToast(v.msg, { type: 'warning' }); return; }
+      if (password !== passwordConfirm) { showToast('Las contraseñas no coinciden', { type: 'warning' }); return; }
+      if (!terminos) { showToast('Acepta los términos', { type: 'warning' }); return; }
+
+      // Firebase Auth
+      if (FIREBASE_CONFIGURED && auth) {
+        try {
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          await cred.user.updateProfile({ displayName: nombre });
+          // Save profile in Firestore
+          if (db) {
+            await db.collection('users').doc(cred.user.uid).set({
+              perfil: {
+                nombre, correo: email, telefono, documento, zona: '', tipo: '',
+                servicios: { agua: true, energia: true, gas: true, internet: true },
+                umbrales: { agua: { consumo: 0, valor: 0 }, energia: { consumo: 0, valor: 0 }, gas: { consumo: 0, valor: 0 }, internet: { consumo: 0, valor: 0 } }
+              }
+            });
+          }
+          showToast('¡Cuenta creada! Redirigiendo...', { type: 'success', delay: 2000 });
+          document.getElementById('formularioRegistro').reset();
+          setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        } catch (err) {
+          if (err.code === 'auth/email-already-in-use') showToast('Este correo ya está registrado', { type: 'warning' });
+          else if (err.code === 'auth/weak-password') showToast('Contraseña muy débil', { type: 'warning' });
+          else showToast('Error: ' + err.message, { type: 'error' });
+        }
         return;
       }
 
-      if (!email || !validarEmail(email)) {
-        showToast('Correo inválido', { type: 'warning' });
-        return;
-      }
-
-      if (!telefono) {
-        showToast('Ingresa tu teléfono', { type: 'warning' });
-        return;
-      }
-
-      if (!documento) {
-        showToast('Ingresa tu documento', { type: 'warning' });
-        return;
-      }
-
-      const validacion = validarContraseña(password);
-      if (!validacion.valida) {
-        showToast(validacion.mensaje, { type: 'warning' });
-        return;
-      }
-
-      if (password !== passwordConfirm) {
-        showToast('Las contraseñas no coinciden', { type: 'warning' });
-        return;
-      }
-
-      if (!terminos) {
-        showToast('Acepta los términos', { type: 'warning' });
-        return;
-      }
-
-      // Verificar duplicados
-      const usuariosRegistrados = JSON.parse(localStorage.getItem('usuarios')) || [];
-      if (usuariosRegistrados.some(u => u.email === email)) {
-        showToast('Este correo ya está registrado', { type: 'warning' });
-        return;
-      }
-      if (usuariosRegistrados.some(u => u.documento === documento)) {
-        showToast('Este documento ya está registrado', { type: 'warning' });
-        return;
-      }
-
-      try {
-        const nuevoUsuario = {
-          id: Date.now().toString(),
-          nombre,
-          email,
-          telefono,
-          documento,
-          password: btoa(password),
-          fecha_registro: new Date().toISOString(),
-          activo: true
-        };
-
-        usuariosRegistrados.push(nuevoUsuario);
-        localStorage.setItem('usuarios', JSON.stringify(usuariosRegistrados));
-
-        showToast('¡Cuenta creada! Redirigiendo...', { type: 'success', delay: 2000 });
-
-        document.getElementById('formularioRegistro').reset();
-
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 2000);
-
-      } catch (error) {
-        showToast('Error al crear cuenta', { type: 'error' });
-        console.error('Error:', error);
-      }
+      // Fallback localStorage
+      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+      if (usuarios.some(u => u.email === email)) { showToast('Correo ya registrado', { type: 'warning' }); return; }
+      if (usuarios.some(u => u.documento === documento)) { showToast('Documento ya registrado', { type: 'warning' }); return; }
+      usuarios.push({ id: Date.now().toString(), nombre, email, telefono, documento, password: btoa(password), fecha_registro: new Date().toISOString(), activo: true });
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+      showToast('¡Cuenta creada! Redirigiendo...', { type: 'success', delay: 2000 });
+      document.getElementById('formularioRegistro').reset();
+      setTimeout(() => { window.location.href = 'index.html'; }, 2000);
     }
 
-    /**
-     * Mostrar toast/notificación
-     */
     function showToast(message, options = {}) {
       const { type = 'info', delay = 0 } = options;
       const container = document.getElementById('toast-container');
-
-      if (!container) {
-        alert(message);
-        return;
-      }
-
-      const toastId = 'toast-' + Date.now();
-      const alertClass = `alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info'}`;
-
-      const toastHTML = `
-        <div id="${toastId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
-          <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      `;
-
-      container.insertAdjacentHTML('beforeend', toastHTML);
-
-      const timeoutDelay = delay || 5000;
-      setTimeout(() => {
-        const toastElement = document.getElementById(toastId);
-        if (toastElement) {
-          toastElement.remove();
-        }
-      }, timeoutDelay);
+      if (!container) { alert(message); return; }
+      const id = 'toast-' + Date.now();
+      const cls = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : type === 'warning' ? 'alert-warning' : 'alert-info';
+      container.insertAdjacentHTML('beforeend', `<div id="${id}" class="alert ${cls} alert-dismissible fade show" role="alert"><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+      setTimeout(() => { const el = document.getElementById(id); if (el) el.remove(); }, delay || 5000);
     }
 
-    /**
-     * Validación en tiempo real
-     */
-    document.addEventListener('DOMContentLoaded', function() {
-      const passwordInput = document.getElementById('password');
-      const passwordConfirmInput = document.getElementById('passwordConfirm');
-      
-      passwordInput.addEventListener('input', function() {
-        const validacion = validarContraseña(this.value);
-        if (!validacion.valida && this.value.length > 0) {
-          this.classList.remove('is-valid');
-          this.classList.add('is-invalid');
-        } else if (validacion.valida) {
-          this.classList.remove('is-invalid');
-          this.classList.add('is-valid');
-        } else {
-          this.classList.remove('is-invalid', 'is-valid');
-        }
+    document.addEventListener('DOMContentLoaded', function () {
+      const pw = document.getElementById('password'), pc = document.getElementById('passwordConfirm');
+      pw.addEventListener('input', function () {
+        const v = validarPassword(this.value);
+        if (!v.ok && this.value.length > 0) { this.classList.remove('is-valid'); this.classList.add('is-invalid'); }
+        else if (v.ok) { this.classList.remove('is-invalid'); this.classList.add('is-valid'); }
+        else { this.classList.remove('is-invalid', 'is-valid'); }
       });
-
-      passwordConfirmInput.addEventListener('input', function() {
-        const password = passwordInput.value;
-        if (this.value && this.value === password) {
-          this.classList.remove('is-invalid');
-          this.classList.add('is-valid');
-        } else if (this.value && this.value !== password) {
-          this.classList.remove('is-valid');
-          this.classList.add('is-invalid');
-        } else {
-          this.classList.remove('is-invalid', 'is-valid');
-        }
+      pc.addEventListener('input', function () {
+        if (this.value && this.value === pw.value) { this.classList.remove('is-invalid'); this.classList.add('is-valid'); }
+        else if (this.value) { this.classList.remove('is-valid'); this.classList.add('is-invalid'); }
+        else { this.classList.remove('is-invalid', 'is-valid'); }
       });
     });
   </script>
 </body>
+
 </html>
