@@ -472,29 +472,30 @@ async function generateAlerts(facturas,perfil){
   const existing=await DataService.getAlertas();
   const existingKeys=new Set(existing.map(a=>a._key||''));
 
-  Object.keys(porSvc).forEach(svc=>{
-    const arr=porSvc[svc];
-    const umb=perfil.umbrales[svc]||{consumo:0,valor:0};
-    for(let i=0;i<arr.length;i++){
-      const cur=arr[i];
+  // iterate services sequentially so we can use await inside
+  for (const svc of Object.keys(porSvc)) {
+    const arr = porSvc[svc];
+    const umb = perfil.umbrales[svc]||{consumo:0,valor:0};
+    for (let i = 0; i < arr.length; i++) {
+      const cur = arr[i];
       // Threshold check
-      if(umb.consumo>0 && cur.consumo>umb.consumo){
-        const key=`umbral_${svc}_${cur.periodo}`;
-        if(!existingKeys.has(key)){
-          const a={servicio:svc,tipo:'exceso',mensaje:`Consumo de ${cur.consumo} supera umbral de ${umb.consumo}`,fecha:new Date().toISOString(),estado:'nueva',_key:key};
+      if (umb.consumo > 0 && cur.consumo > umb.consumo) {
+        const key = `umbral_${svc}_${cur.periodo}`;
+        if (!existingKeys.has(key)) {
+          const a = {servicio:svc,tipo:'exceso',mensaje:`Consumo de ${cur.consumo} supera umbral de ${umb.consumo}`,fecha:new Date().toISOString(),estado:'nueva',_key:key};
           existing.push(a); existingKeys.add(key);
           await DataService.saveAlerta(a);
         }
       }
       // Variation check (>20% vs previous)
-      if(i>0){
-        const prev=arr[i-1];
-        if(prev.consumo>0){
-          const pct=((cur.consumo-prev.consumo)/prev.consumo*100);
-          if(pct>20){
-            const key=`var_${svc}_${cur.periodo}`;
-            if(!existingKeys.has(key)){
-              const a={servicio:svc,tipo:'variación',mensaje:`Aumento de ${pct.toFixed(1)}% vs período anterior (${prev.periodo})`,fecha:new Date().toISOString(),estado:'nueva',_key:key};
+      if (i > 0) {
+        const prev = arr[i-1];
+        if (prev.consumo > 0) {
+          const pct = ((cur.consumo - prev.consumo) / prev.consumo * 100);
+          if (pct > 20) {
+            const key = `var_${svc}_${cur.periodo}`;
+            if (!existingKeys.has(key)) {
+              const a = {servicio:svc,tipo:'variación',mensaje:`Aumento de ${pct.toFixed(1)}% vs período anterior (${prev.periodo})`,fecha:new Date().toISOString(),estado:'nueva',_key:key};
               existing.push(a); existingKeys.add(key);
               await DataService.saveAlerta(a);
             }
@@ -502,7 +503,7 @@ async function generateAlerts(facturas,perfil){
         }
       }
     }
-  });
+  }
   localStorage.setItem('alertas',JSON.stringify(existing));
 }
 
