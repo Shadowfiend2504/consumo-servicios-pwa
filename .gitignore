@@ -1,0 +1,13 @@
+# Firebase Configuration (contiene credenciales sensibles)
+js/firebase-config.js
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Node modules (si aplica)
+node_modules/
