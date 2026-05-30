@@ -13,6 +13,47 @@ if (typeof window.FIREBASE_CONFIGURED === 'undefined') {
 }
 
 const DataService = {
+    _defaultPerfil() {
+        return {
+            nombre: '',
+            correo: localStorage.getItem('userEmail') || '',
+            zona: '',
+            tipo: '',
+            servicios: { agua: true, energia: true, gas: true, internet: true },
+            umbrales: {
+                agua: { consumo: 0, valor: 0 },
+                energia: { consumo: 0, valor: 0 },
+                gas: { consumo: 0, valor: 0 },
+                internet: { consumo: 0, valor: 0 }
+            }
+        };
+    },
+
+    _normalizePerfil(perfil) {
+        const base = this._defaultPerfil();
+        const src = (perfil && typeof perfil === 'object') ? perfil : {};
+        const serviciosIn = (src.servicios && typeof src.servicios === 'object') ? src.servicios : {};
+        const umbralesIn = (src.umbrales && typeof src.umbrales === 'object') ? src.umbrales : {};
+
+        const servicios = { ...base.servicios, ...serviciosIn };
+        const umbrales = {};
+        Object.keys(base.umbrales).forEach((svc) => {
+            const u = (umbralesIn[svc] && typeof umbralesIn[svc] === 'object') ? umbralesIn[svc] : {};
+            umbrales[svc] = {
+                consumo: Number(u.consumo) || 0,
+                valor: Number(u.valor) || 0
+            };
+        });
+
+        return {
+            ...base,
+            ...src,
+            servicios,
+            umbrales,
+            correo: src.correo || base.correo
+        };
+    },
+
     // ---- Firebase helpers (safe globals) ----
     _fbConfigured() {
         return !!(window.__FIREBASE_CONFIG__ || window.FIREBASE_CONFIGURED);
@@ -43,21 +84,18 @@ const DataService = {
         if (this._isFirebase()) {
             try {
                 const doc = await db.collection('users').doc(this._getUid()).get();
-                if (doc.exists && doc.data().perfil) return doc.data().perfil;
+                if (doc.exists && doc.data().perfil) return this._normalizePerfil(doc.data().perfil);
             } catch (e) { console.warn('Firestore getPerfil error:', e); }
         }
-        return JSON.parse(localStorage.getItem('perfil')) || {
-            nombre: '', correo: localStorage.getItem('userEmail') || '', zona: '', tipo: '',
-            servicios: { agua: true, energia: true, gas: true, internet: true },
-            umbrales: { agua: { consumo: 0, valor: 0 }, energia: { consumo: 0, valor: 0 }, gas: { consumo: 0, valor: 0 }, internet: { consumo: 0, valor: 0 } }
-        };
+        return this._normalizePerfil(JSON.parse(localStorage.getItem('perfil')));
     },
 
     async savePerfil(perfil) {
-        localStorage.setItem('perfil', JSON.stringify(perfil));
+        const normalized = this._normalizePerfil(perfil);
+        localStorage.setItem('perfil', JSON.stringify(normalized));
         if (this._isFirebase()) {
             try {
-                await db.collection('users').doc(this._getUid()).set({ perfil }, { merge: true });
+                await db.collection('users').doc(this._getUid()).set({ perfil: normalized }, { merge: true });
             } catch (e) { console.warn('Firestore savePerfil error:', e); }
         }
     },

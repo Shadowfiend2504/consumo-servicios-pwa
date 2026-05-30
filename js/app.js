@@ -57,7 +57,8 @@ document.addEventListener('click',e=>{
 async function loadInicio(c){
   const facturas = await getFacturas();
   const perfil = await getPerfil();
-  const activos = Object.keys(perfil.servicios).filter(k=>perfil.servicios[k]);
+  const servicios = (perfil && perfil.servicios && typeof perfil.servicios === 'object') ? perfil.servicios : {};
+  const activos = Object.keys(servicios).filter(k=>servicios[k]);
 
   // Summary cards
   let cardsHtml='<div class="gap-grid gap-grid-4 mb-4">';
@@ -164,6 +165,8 @@ async function updateAlertBadges(){
 async function loadPerfil(c){
   const p=await getPerfil();
   p.correo=p.correo||localStorage.getItem('userEmail')||'';
+  if(!p.servicios || typeof p.servicios!=='object') p.servicios={};
+  if(!p.umbrales || typeof p.umbrales!=='object') p.umbrales={};
   let svcToggles='';
   Object.keys(SERVICE_META).forEach(svc=>{
     const m=SERVICE_META[svc]; const checked=p.servicios[svc]!==false?'checked':'';
@@ -464,6 +467,8 @@ window.limpiarTodasAlertas=async function(){
 };
 
 async function generateAlerts(facturas,perfil){
+  if(!perfil || typeof perfil!=='object') perfil={};
+  if(!perfil.umbrales || typeof perfil.umbrales!=='object') perfil.umbrales={};
   // Only generate if new invoices detected (simple check)
   const porSvc={};
   facturas.forEach(f=>{ if(!porSvc[f.servicio]) porSvc[f.servicio]=[]; porSvc[f.servicio].push(f); });
