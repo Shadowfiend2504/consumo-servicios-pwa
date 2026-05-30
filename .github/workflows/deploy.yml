@@ -27,7 +27,7 @@ jobs:
       - name: Create firebase-config.js from secret JSON
         shell: bash
         env:
-          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+          FIREBASE_CONFIG_JSON: ${{ vars.FIREBASE_CONFIG_JSON }}
         run: |
           if [ -z "$FIREBASE_CONFIG_JSON" ]; then
             echo "Missing FIREBASE_CONFIG_JSON secret" >&2
