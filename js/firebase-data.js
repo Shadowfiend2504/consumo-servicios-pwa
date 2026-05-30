@@ -3,13 +3,12 @@
 //  Estructura: users/{uid}/facturas, users/{uid}/perfil, users/{uid}/alertas
 // ============================================================
 
-// Ensure legacy scripts that reference bare FIREBASE_CONFIGURED don't throw
-if (typeof FIREBASE_CONFIGURED === 'undefined') {
+// Ensure legacy scripts that reference the global flag won't throw — use window property only
+if (typeof window.FIREBASE_CONFIGURED === 'undefined') {
     try {
-        var FIREBASE_CONFIGURED = Boolean(window.__FIREBASE_CONFIG__ || window.FIREBASE_CONFIGURED);
-        window.FIREBASE_CONFIGURED = FIREBASE_CONFIGURED;
+        window.FIREBASE_CONFIGURED = Boolean(window.__FIREBASE_CONFIG__ || window.FIREBASE_CONFIGURED);
     } catch (e) {
-        var FIREBASE_CONFIGURED = false;
+        window.FIREBASE_CONFIGURED = false;
     }
 }
 
