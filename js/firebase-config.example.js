@@ -38,11 +38,7 @@ if (FIREBASE_CONFIGURED) {
         window.firebaseApp = firebaseApp;
         window.auth = auth;
         window.db = db;
-        console.log('✅ Firebase inicializado correctamente');
-        console.log('   auth.app.options =', auth.app.options);
     } catch (e) {
         console.warn('⚠️ Error al inicializar Firebase:', e);
     }
-} else {
-    console.log('ℹ️ Firebase no configurado — usando localStorage como fallback');
 }
