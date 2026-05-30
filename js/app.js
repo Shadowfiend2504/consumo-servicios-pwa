@@ -9,6 +9,9 @@ const SERVICE_META = {
   internet: { label:'Internet', icon:'bi-wifi',           unit:'Mbps', emoji:'📶', cls:'internet' }
 };
 
+let dashChartInstance = null;
+let dashCostChartInstance = null;
+
 // data access now goes through DataService which handles Firestore/localStorage logic
 async function getFacturas(){
   return await DataService.getFacturas();
@@ -59,6 +62,18 @@ async function loadInicio(c){
   const perfil = await getPerfil();
   const servicios = (perfil && perfil.servicios && typeof perfil.servicios === 'object') ? perfil.servicios : {};
   const activos = Object.keys(servicios).filter(k=>servicios[k]);
+
+  if((facturas||[]).length===0){
+    c.innerHTML=`
+      <div class="empty-state">
+        <i class="bi bi-inbox d-block"></i>
+        <h5>Aún no hay facturas registradas</h5>
+        <p>Actualmente no se encuentran datos guardados. Registra nuevas facturas para iniciar el análisis de consumo.</p>
+        <a href="registrar.html" class="btn btn-primary mt-2"><i class="bi bi-plus-circle me-1"></i>Registrar Factura</a>
+      </div>`;
+    await updateAlertBadges();
+    return;
+  }
 
   // Summary cards
   let cardsHtml='<div class="gap-grid gap-grid-4 mb-4">';
@@ -126,6 +141,10 @@ function renderDashCharts(facturas, activos){
   // Consumption chart
   const canvas1=document.getElementById('dashChart');
   if(canvas1){
+    if(dashChartInstance){
+      dashChartInstance.destroy();
+      dashChartInstance = null;
+    }
     const datasets=activos.map(svc=>{
       const m=SERVICE_META[svc];
       const colors={agua:'#0ea5e9',energia:'#f59e0b',gas:'#ef4444',internet:'#10b981'};
@@ -135,11 +154,15 @@ function renderDashCharts(facturas, activos){
         borderColor:colors[svc], backgroundColor:colors[svc]+'20', tension:0.4, borderWidth:2, fill:true
       };
     });
-    new Chart(canvas1,{type:'line',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
+    dashChartInstance = new Chart(canvas1,{type:'line',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
   }
   // Cost chart
   const canvas2=document.getElementById('dashCostChart');
   if(canvas2){
+    if(dashCostChartInstance){
+      dashCostChartInstance.destroy();
+      dashCostChartInstance = null;
+    }
     const datasets=activos.map(svc=>{
       const colors={agua:'#0ea5e9',energia:'#f59e0b',gas:'#ef4444',internet:'#10b981'};
       return {
@@ -148,7 +171,7 @@ function renderDashCharts(facturas, activos){
         backgroundColor:colors[svc]+'80', borderColor:colors[svc], borderWidth:1
       };
     });
-    new Chart(canvas2,{type:'bar',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
+    dashCostChartInstance = new Chart(canvas2,{type:'bar',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
   }
 }
 
