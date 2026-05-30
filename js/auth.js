@@ -2,12 +2,14 @@
  * Gestión de autenticación — Firebase Auth + fallback localStorage
  */
 
-document.addEventListener('DOMContentLoaded', function () {
-  const FB_CONFIGURED = Boolean(window.FIREBASE_CONFIGURED);
-  const FB_AUTH = window.auth || window.firebaseAuth || null;
+function isFbConfigured() { return Boolean(window.FIREBASE_CONFIGURED || window.__FIREBASE_CONFIG__); }
+function fbAuth() { return window.auth || window.firebaseAuth || null; }
+function fbDb() { return window.db || window.firebaseDb || null; }
 
-  if (FB_CONFIGURED && FB_AUTH) {
-    // Firebase: escuchar cambios de estado de autenticación
+document.addEventListener('DOMContentLoaded', function () {
+  const FB_AUTH = fbAuth();
+
+  if (isFbConfigured() && FB_AUTH) {
     FB_AUTH.onAuthStateChanged(function (user) {
       if (user) {
         localStorage.setItem('userEmail', user.email);
@@ -22,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   } else {
-    // Fallback: comprobar localStorage
     checkAuthStatusLocal();
   }
 });
@@ -76,9 +77,8 @@ async function login(event) {
   }
 
   // Firebase Auth
-  const FB_CONFIGURED = Boolean(window.FIREBASE_CONFIGURED);
-  const FB_AUTH = window.auth || window.firebaseAuth || null;
-  if (FB_CONFIGURED && FB_AUTH) {
+  const FB_AUTH = fbAuth();
+  if (isFbConfigured() && FB_AUTH) {
     try {
       const cred = await FB_AUTH.signInWithEmailAndPassword(email, password);
       showToast('¡Bienvenido! Accediendo...', { type: 'success', delay: 1500 });
@@ -121,8 +121,9 @@ async function login(event) {
 async function logout() {
   if (!confirm('¿Cerrar sesión?')) return;
   try {
-    if (FIREBASE_CONFIGURED && auth) {
-      await auth.signOut();
+    const a = fbAuth();
+    if (isFbConfigured() && a) {
+      await a.signOut();
     }
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
