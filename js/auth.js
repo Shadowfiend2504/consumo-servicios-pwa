@@ -3,15 +3,20 @@
  */
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (FIREBASE_CONFIGURED && auth) {
+  const FB_CONFIGURED = Boolean(window.FIREBASE_CONFIGURED);
+  const FB_AUTH = window.auth || window.firebaseAuth || null;
+
+  if (FB_CONFIGURED && FB_AUTH) {
     // Firebase: escuchar cambios de estado de autenticación
-    auth.onAuthStateChanged(function (user) {
+    FB_AUTH.onAuthStateChanged(function (user) {
       if (user) {
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userName', user.displayName || user.email.split('@')[0]);
         localStorage.setItem('userId', user.uid);
         showDashboard();
-        DataService.syncFromFirestore();
+        if (window.DataService && typeof window.DataService.syncFromFirestore === 'function') {
+          window.DataService.syncFromFirestore();
+        }
       } else {
         showLogin();
       }
@@ -71,9 +76,11 @@ async function login(event) {
   }
 
   // Firebase Auth
-  if (FIREBASE_CONFIGURED && auth) {
+  const FB_CONFIGURED = Boolean(window.FIREBASE_CONFIGURED);
+  const FB_AUTH = window.auth || window.firebaseAuth || null;
+  if (FB_CONFIGURED && FB_AUTH) {
     try {
-      const cred = await auth.signInWithEmailAndPassword(email, password);
+      const cred = await FB_AUTH.signInWithEmailAndPassword(email, password);
       showToast('¡Bienvenido! Accediendo...', { type: 'success', delay: 1500 });
       // onAuthStateChanged manejará el resto
     } catch (err) {
@@ -167,7 +174,8 @@ document.addEventListener('keypress', function (e) {
 
 // Demo user seed (only for localStorage fallback)
 document.addEventListener('DOMContentLoaded', function () {
-  if (!FIREBASE_CONFIGURED) {
+  const FB_CONFIGURED = Boolean(window.FIREBASE_CONFIGURED);
+  if (!FB_CONFIGURED) {
     const existing = JSON.parse(localStorage.getItem('usuarios'));
     if (!existing || existing.length === 0) {
       localStorage.setItem('usuarios', JSON.stringify([{
