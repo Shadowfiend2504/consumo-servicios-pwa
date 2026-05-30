@@ -4,14 +4,29 @@
 // ============================================================
 
 const DataService = {
+    // ---- Firebase helpers (safe globals) ----
+    _fbConfigured() {
+        return !!(window.__FIREBASE_CONFIG__ || window.FIREBASE_CONFIGURED);
+    },
+
+    _fbAuth() {
+        return window.auth || window.firebaseAuth || null;
+    },
+
+    _fbDb() {
+        return window.db || window.firebaseDb || null;
+    },
     // ---- UID helper ----
     _getUid() {
-        if (FIREBASE_CONFIGURED && auth && auth.currentUser) return auth.currentUser.uid;
+        const fbAuth = this._fbAuth();
+        if (this._fbConfigured() && fbAuth && fbAuth.currentUser) return fbAuth.currentUser.uid;
         return localStorage.getItem('userId') || 'local';
     },
 
     _isFirebase() {
-        return FIREBASE_CONFIGURED && db && auth && auth.currentUser;
+        const fbAuth = this._fbAuth();
+        const fbDb = this._fbDb();
+        return this._fbConfigured() && fbDb && fbAuth && fbAuth.currentUser;
     },
 
     // ===================== PERFIL =====================
