@@ -1,8 +1,19 @@
-document.addEventListener('DOMContentLoaded',()=>{
 // analisis.js - cálculo de variaciones y manejo de navegación
 
+let facturasCache = [];
+
 function getFacturas() {
-  return JSON.parse(localStorage.getItem('facturas')) || [];
+  return facturasCache.slice();
+}
+
+async function cargarFacturasDesdeFuente() {
+  if (typeof window.obtenerFacturasActuales === 'function') {
+    facturasCache = await window.obtenerFacturasActuales();
+    return facturasCache;
+  }
+
+  facturasCache = JSON.parse(localStorage.getItem('facturas')) || [];
+  return facturasCache;
 }
 
 function irRegistro() {
@@ -10,19 +21,35 @@ function irRegistro() {
 }
 
 function logout() {
-  localStorage.removeItem('usuario');
+  const auth = window.firebaseAuth;
+
+  if (auth && typeof auth.signOut === 'function') {
+    auth.signOut().catch((error) => console.error('Error al cerrar sesión en Firebase:', error));
+  }
+
+  if (typeof window.clearLocalSession === 'function') {
+    window.clearLocalSession();
+  } else {
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userId');
+  }
+
   window.location.href = 'index.html';
 }
 
 function obtenerUmbrales(){
   // umbrales por servicio en porcentaje (por ejemplo 20 -> 20%)
-  return JSON.parse(localStorage.getItem('umbrales')) || {"Agua":20,"Energía":20,"Gas":20,"Internet":20};
+  const userScope = window.getCurrentUserId ? window.getCurrentUserId() : (localStorage.getItem('userId') || localStorage.getItem('userEmail') || 'anonimo');
+  return JSON.parse(localStorage.getItem(`umbrales_${userScope}`)) || {"Agua":20,"Energía":20,"Gas":20,"Internet":20};
 }
 
 function guardarUmbral(servicio, porcentaje){
+  const userScope = window.getCurrentUserId ? window.getCurrentUserId() : (localStorage.getItem('userId') || localStorage.getItem('userEmail') || 'anonimo');
   const u = obtenerUmbrales();
   u[servicio] = Number(porcentaje);
-  localStorage.setItem('umbrales', JSON.stringify(u));
+  localStorage.setItem(`umbrales_${userScope}`, JSON.stringify(u));
 }
 
 function promedioHistoricoPorServicio(facturas, servicio){
@@ -80,16 +107,20 @@ function compararYGenerarAlertas(){
   });
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', async()=>{
   const user = localStorage.getItem('usuario');
   if(!user){
-    window.location.href = 'index.html';
-    return;
+    const currentEmail = localStorage.getItem('userEmail') || (typeof window.getCurrentUserEmail === 'function' ? window.getCurrentUserEmail() : '');
+    if (!currentEmail) {
+      window.location.href = 'index.html';
+      return;
+    }
   }
   const userEl = document.getElementById('usuario');
-  if(userEl) userEl.textContent = 'Usuario: ' + user;
+  if(userEl) userEl.textContent = 'Usuario: ' + (localStorage.getItem('userName') || localStorage.getItem('userEmail') || user);
 
   // mostrar umbrales y permitir modificarlos
+  await cargarFacturasDesdeFuente();
   const umbrales = obtenerUmbrales();
   const resumenEl = document.getElementById('resumen');
   const alertasEl = document.getElementById('alertas');
@@ -101,7 +132,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   // sincronizar con perfil (si existe)
   const perfilObj = (window.perfil && window.perfil.obtenerPerfil) ? window.perfil.obtenerPerfil() : null;
   if(perfilObj && perfilObj.umbrales){
-    localStorage.setItem('umbrales', JSON.stringify(perfilObj.umbrales));
+    const userScope = window.getCurrentUserId ? window.getCurrentUserId() : (localStorage.getItem('userId') || localStorage.getItem('userEmail') || 'anonimo');
+    localStorage.setItem(`umbrales_${userScope}`, JSON.stringify(perfilObj.umbrales));
   }
 
   // generar alertas antes de renderizar

@@ -200,6 +200,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
   <script>
     /**
      * Toggle visibilidad de contraseña
@@ -249,7 +253,7 @@
     /**
      * Registrar Usuario
      */
-    function registrarUsuario(event) {
+    async function registrarUsuario(event) {
       event.preventDefault();
 
       const nombre = document.getElementById('nombre').value.trim();
@@ -297,31 +301,41 @@
         return;
       }
 
-      // Verificar duplicados
-      const usuariosRegistrados = JSON.parse(localStorage.getItem('usuarios')) || [];
-      if (usuariosRegistrados.some(u => u.email === email)) {
-        showToast('Este correo ya está registrado', { type: 'warning' });
-        return;
-      }
-      if (usuariosRegistrados.some(u => u.documento === documento)) {
-        showToast('Este documento ya está registrado', { type: 'warning' });
-        return;
-      }
-
       try {
+        const auth = window.firebaseAuth;
+        const db = window.firebaseDb;
+
+        if (!auth || !db) {
+          showToast('Firebase no está disponible en este momento', { type: 'error' });
+          return;
+        }
+
+        const credential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = credential.user;
+
+        if (!user) {
+          showToast('No fue posible crear la cuenta', { type: 'error' });
+          return;
+        }
+
+        await user.updateProfile({ displayName: nombre });
+
         const nuevoUsuario = {
-          id: Date.now().toString(),
+          id: user.uid,
+          uid: user.uid,
           nombre,
           email,
           telefono,
           documento,
-          password: btoa(password),
-          fecha_registro: new Date().toISOString(),
-          activo: true
+          activo: true,
+          fecha_registro: new Date().toISOString()
         };
 
-        usuariosRegistrados.push(nuevoUsuario);
-        localStorage.setItem('usuarios', JSON.stringify(usuariosRegistrados));
+        await db.collection('usuarios').doc(user.uid).set(nuevoUsuario, { merge: true });
+
+        if (typeof window.syncLocalSessionFromUser === 'function') {
+          await window.syncLocalSessionFromUser(user, nuevoUsuario);
+        }
 
         showToast('¡Cuenta creada! Redirigiendo...', { type: 'success', delay: 2000 });
 
@@ -332,6 +346,21 @@
         }, 2000);
 
       } catch (error) {
+        if (error && error.code === 'auth/email-already-in-use') {
+          showToast('Este correo ya está registrado', { type: 'warning' });
+          return;
+        }
+
+        if (error && error.code === 'auth/invalid-email') {
+          showToast('Correo inválido', { type: 'warning' });
+          return;
+        }
+
+        if (error && error.code === 'auth/weak-password') {
+          showToast('La contraseña es demasiado débil', { type: 'warning' });
+          return;
+        }
+
         showToast('Error al crear cuenta', { type: 'error' });
         console.error('Error:', error);
       }

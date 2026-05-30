@@ -138,9 +138,11 @@ function loadConsumo(container) {
 /**
  * Cargar datos de facturas
  */
-function loadFacturas(container) {
+async function loadFacturas(container) {
   try {
-    const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+    const facturas = typeof window.obtenerFacturasActuales === 'function'
+      ? await window.obtenerFacturasActuales()
+      : JSON.parse(localStorage.getItem('facturas') || '[]');
 
     // Barra superior con botón para registrar nueva factura
     let html = `
@@ -203,33 +205,56 @@ function loadFacturas(container) {
   }
 }
 
-function marcarFacturaPagada(id) {
-  const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
-  const idx = facturas.findIndex(f => f.id === id);
-  if (idx === -1) return;
-  facturas[idx].fecha_pago = new Date().toISOString();
-  localStorage.setItem('facturas', JSON.stringify(facturas));
-  if (typeof showToast === 'function') showToast('Factura marcada como pagada', { type: 'success' });
-  const cont = document.getElementById('facturas-content');
-  if (cont) loadFacturas(cont);
+async function marcarFacturaPagada(id) {
+  try {
+    if (typeof window.actualizarFacturaActual === 'function') {
+      await window.actualizarFacturaActual(id, { fecha_pago: new Date().toISOString() });
+    } else {
+      const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+      const idx = facturas.findIndex(f => f.id === id);
+      if (idx === -1) return;
+      facturas[idx].fecha_pago = new Date().toISOString();
+      localStorage.setItem('facturas', JSON.stringify(facturas));
+    }
+
+    if (typeof showToast === 'function') showToast('Factura marcada como pagada', { type: 'success' });
+    const cont = document.getElementById('facturas-content');
+    if (cont) loadFacturas(cont);
+  } catch (error) {
+    console.error('Error al marcar la factura como pagada:', error);
+    if (typeof showToast === 'function') showToast('No se pudo actualizar la factura', { type: 'error' });
+  }
 }
 
-function eliminarFactura(id) {
+async function eliminarFactura(id) {
   if (!confirm('¿Eliminar esta factura?')) return;
-  let facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
-  facturas = facturas.filter(f => f.id !== id);
-  localStorage.setItem('facturas', JSON.stringify(facturas));
-  if (typeof showToast === 'function') showToast('Factura eliminada', { type: 'warning' });
-  const cont = document.getElementById('facturas-content');
-  if (cont) loadFacturas(cont);
+
+  try {
+    if (typeof window.eliminarFacturaActual === 'function') {
+      await window.eliminarFacturaActual(id);
+    } else {
+      let facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+      facturas = facturas.filter(f => f.id !== id);
+      localStorage.setItem('facturas', JSON.stringify(facturas));
+    }
+
+    if (typeof showToast === 'function') showToast('Factura eliminada', { type: 'warning' });
+    const cont = document.getElementById('facturas-content');
+    if (cont) loadFacturas(cont);
+  } catch (error) {
+    console.error('Error al eliminar la factura:', error);
+    if (typeof showToast === 'function') showToast('No se pudo eliminar la factura', { type: 'error' });
+  }
 }
 
 /**
  * Cargar análisis de consumo
  */
-function loadAnalisis(container) {
+async function loadAnalisis(container) {
   try {
-    const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+    const facturas = typeof window.obtenerFacturasActuales === 'function'
+      ? await window.obtenerFacturasActuales()
+      : JSON.parse(localStorage.getItem('facturas') || '[]');
     
     if (facturas.length === 0) {
       container.innerHTML = '<p class="alert alert-info">No hay facturas registradas. Registra facturas en "Registrar Factura" para ver el análisis.</p>';
@@ -378,9 +403,11 @@ function loadAnalisis(container) {
 /**
  * Cargar alertas
  */
-function loadAlertas(container) {
+async function loadAlertas(container) {
   try {
-    const facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+    const facturas = typeof window.obtenerFacturasActuales === 'function'
+      ? await window.obtenerFacturasActuales()
+      : JSON.parse(localStorage.getItem('facturas') || '[]');
     const tareas = JSON.parse(localStorage.getItem('tareas') || '[]');
     
     let alertas = [];
@@ -492,7 +519,10 @@ function loadAlertas(container) {
  */
 function loadPerfil(container) {
   try {
-    const userEmail = localStorage.getItem('userEmail') || 'usuario@ejemplo.com';
+    const userEmail = localStorage.getItem('userEmail') || (typeof window.getCurrentUserEmail === 'function' ? window.getCurrentUserEmail() : 'usuario@ejemplo.com');
+    const userName = localStorage.getItem('userName') || 'Usuario del Sistema';
+    const userDocument = localStorage.getItem('userDocument') || '1234567890';
+    const userPhone = localStorage.getItem('userPhone') || '+57 300 123 4567';
     const html = `
       <div class="row">
         <div class="col-md-6">
@@ -500,9 +530,9 @@ function loadPerfil(container) {
             <div class="card-body">
               <h5 class="card-title">Información Personal</h5>
               <p><strong>Email:</strong> ${userEmail}</p>
-              <p><strong>Nombre:</strong> Usuario del Sistema</p>
-              <p><strong>Documento:</strong> 1234567890</p>
-              <p><strong>Teléfono:</strong> +57 300 123 4567</p>
+              <p><strong>Nombre:</strong> ${userName}</p>
+              <p><strong>Documento:</strong> ${userDocument}</p>
+              <p><strong>Teléfono:</strong> ${userPhone}</p>
               <button class="btn btn-primary mt-3">Editar Perfil</button>
             </div>
           </div>
@@ -1116,10 +1146,16 @@ function eliminarTarea(indice) {
  * Actualizar datos mostrados del usuario
  */
 function updateUserInfo() {
-  const userEmail = localStorage.getItem('userEmail') || 'Usuario';
+  const userEmail = localStorage.getItem('userEmail') || (typeof window.getCurrentUserEmail === 'function' ? window.getCurrentUserEmail() : 'Usuario');
   const userName = document.getElementById('userName');
   
   if (userName) {
+    const storedName = localStorage.getItem('userName');
+    if (storedName) {
+      userName.textContent = storedName;
+      return;
+    }
+
     userName.textContent = userEmail.split('@')[0].charAt(0).toUpperCase() + 
                           userEmail.split('@')[0].slice(1);
   }

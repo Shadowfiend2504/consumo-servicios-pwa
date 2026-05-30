@@ -1,9 +1,19 @@
 // profile.js - gestión de perfil y configuración del hogar
 (function(){
+  function obtenerClavePerfil(){
+    const userScope = window.getCurrentUserId ? window.getCurrentUserId() : (localStorage.getItem('userId') || localStorage.getItem('userEmail') || 'anonimo');
+    return `perfil_${userScope}`;
+  }
+
+  function obtenerClaveUmbrales(){
+    const userScope = window.getCurrentUserId ? window.getCurrentUserId() : (localStorage.getItem('userId') || localStorage.getItem('userEmail') || 'anonimo');
+    return `umbrales_${userScope}`;
+  }
+
   function obtenerPerfil(){
-    return JSON.parse(localStorage.getItem('perfil')) || {
+    return JSON.parse(localStorage.getItem(obtenerClavePerfil())) || {
       nombre: '',
-      correo: localStorage.getItem('usuario') || '',
+      correo: localStorage.getItem('userEmail') || (typeof window.getCurrentUserEmail === 'function' ? window.getCurrentUserEmail() : ''),
       zona: '',
       tipo: '',
       servicios: {Agua:true,'Energía':true,Gas:true,Internet:true},
@@ -12,9 +22,9 @@
   }
 
   function guardarPerfil(p){
-    localStorage.setItem('perfil', JSON.stringify(p));
+    localStorage.setItem(obtenerClavePerfil(), JSON.stringify(p));
     // sincronizar umbrales globales
-    localStorage.setItem('umbrales', JSON.stringify(p.umbrales||{}));
+    localStorage.setItem(obtenerClaveUmbrales(), JSON.stringify(p.umbrales||{}));
   }
 
   function openPerfilModal(){

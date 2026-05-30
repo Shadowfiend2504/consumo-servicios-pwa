@@ -2,9 +2,48 @@
  * Gestión de autenticación del sistema
  */
 
+function getFirebaseAuthInstance() {
+  return typeof window.firebaseAuth !== 'undefined' ? window.firebaseAuth : null;
+}
+
+async function hydrateSessionFromFirebase() {
+  const auth = getFirebaseAuthInstance();
+
+  if (!auth || !auth.currentUser) {
+    return;
+  }
+
+  const profile = typeof window.getCurrentUserProfile === 'function'
+    ? await window.getCurrentUserProfile()
+    : null;
+
+  if (typeof window.syncLocalSessionFromUser === 'function') {
+    await window.syncLocalSessionFromUser(auth.currentUser, profile || {});
+  }
+}
+
 // Verificar si el usuario está autenticado al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-  checkAuthStatus();
+  const auth = getFirebaseAuthInstance();
+
+  if (auth && typeof auth.onAuthStateChanged === 'function') {
+    auth.onAuthStateChanged(async (user) => {
+      if (user && typeof window.syncLocalSessionFromUser === 'function') {
+        const profile = typeof window.getCurrentUserProfile === 'function'
+          ? await window.getCurrentUserProfile()
+          : null;
+
+        await window.syncLocalSessionFromUser(user, profile || {});
+      }
+
+      checkAuthStatus();
+    });
+    return;
+  }
+
+  hydrateSessionFromFirebase()
+    .catch((error) => console.error('Error al restaurar la sesión:', error))
+    .finally(() => checkAuthStatus());
 });
 
 /**
@@ -48,7 +87,7 @@ function togglePasswordVisibilityLogin() {
 /**
  * Función de login mejorada
  */
-function login(event) {
+async function login(event) {
   if (event) {
     event.preventDefault();
   }
@@ -75,46 +114,63 @@ function login(event) {
   }
 
   try {
-    // Obtener usuarios registrados
+    const auth = getFirebaseAuthInstance();
+
+    if (auth && typeof auth.signInWithEmailAndPassword === 'function') {
+      const credential = await auth.signInWithEmailAndPassword(email, password);
+      const profile = typeof window.getCurrentUserProfile === 'function'
+        ? await window.getCurrentUserProfile()
+        : null;
+
+      if (typeof window.syncLocalSessionFromUser === 'function') {
+        await window.syncLocalSessionFromUser(credential.user, profile || {});
+      }
+
+      if (recordar) {
+        localStorage.setItem('recordar', 'true');
+      }
+
+      showToast('¡Bienvenido! Accediendo al sistema...', { type: 'success', delay: 1000 });
+
+      setTimeout(() => {
+        checkAuthStatus();
+      }, 500);
+
+      return;
+    }
+
+    // Fallback local para escenarios sin Firebase cargado.
     const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
-    
-    // Buscar usuario
+
     const usuarioEncontrado = usuarios.find(u => u.email === email);
-    
+
     if (!usuarioEncontrado) {
       showToast('Correo o contraseña incorrectos', { type: 'warning' });
       return;
     }
 
-    // Verificar contraseña (decodificar)
     const passwordDecodificada = atob(usuarioEncontrado.password);
     if (passwordDecodificada !== password) {
       showToast('Correo o contraseña incorrectos', { type: 'warning' });
       return;
     }
 
-    // Verificar si la cuenta está activa
     if (!usuarioEncontrado.activo) {
       showToast('Tu cuenta ha sido desactivada. Contacta con soporte.', { type: 'error' });
       return;
     }
 
-    // Login exitoso
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userName', usuarioEncontrado.nombre);
     localStorage.setItem('userId', usuarioEncontrado.id);
-    
+
     if (recordar) {
       localStorage.setItem('recordar', 'true');
     }
 
-    // Guardar información de último acceso
     localStorage.setItem('ultimoAcceso', new Date().toISOString());
-
-    // Mostrar mensaje de éxito
     showToast('¡Bienvenido! Accediendo al sistema...', { type: 'success', delay: 1000 });
 
-    // Esperar un poco y mostrar el dashboard
     setTimeout(() => {
       checkAuthStatus();
     }, 500);
@@ -131,11 +187,20 @@ function login(event) {
 function logout() {
   if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
     try {
+      const auth = getFirebaseAuthInstance();
+      if (auth && typeof auth.signOut === 'function') {
+        auth.signOut().catch((error) => console.error('Error al cerrar sesión en Firebase:', error));
+      }
+
       // Limpiar localStorage
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('ultimoAcceso');
+      if (typeof window.clearLocalSession === 'function') {
+        window.clearLocalSession();
+      } else {
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('ultimoAcceso');
+      }
 
       // Limpiar campos
       const emailInput = document.getElementById('email');
@@ -226,8 +291,14 @@ document.addEventListener('keypress', function(event) {
  * Precargar datos de demostración si no hay usuarios registrados
  */
 document.addEventListener('DOMContentLoaded', function() {
+  const auth = getFirebaseAuthInstance();
+
+  if (auth && auth.currentUser) {
+    return;
+  }
+
   const usuariosExistentes = JSON.parse(localStorage.getItem('usuarios'));
-  
+
   // Si no hay usuarios, crear uno de demostración
   if (!usuariosExistentes || usuariosExistentes.length === 0) {
     const usuarioDemostracion = {
@@ -240,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fecha_registro: new Date().toISOString(),
       activo: true
     };
-    
+
     localStorage.setItem('usuarios', JSON.stringify([usuarioDemostracion]));
   }
 });
