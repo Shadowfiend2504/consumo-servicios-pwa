@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -29,10 +29,10 @@ jobs:
       - name: Prepare site
         shell: bash
         env:
-          FIREBASE_CONFIG_JSON: ${{ secrets['FIREBASE_CONFIG_JSON'] }}
+          FIREBASE_CONFIG_JSON: ${{ vars.FIREBASE_CONFIG_JSON }}
         run: |
           if [ -z "$FIREBASE_CONFIG_JSON" ]; then
-            echo "Missing FIREBASE_CONFIG_JSON secret" >&2
+            echo "Missing FIREBASE_CONFIG_JSON variable" >&2
             exit 1
           fi
 
@@ -68,7 +68,7 @@ jobs:
           NODE
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
