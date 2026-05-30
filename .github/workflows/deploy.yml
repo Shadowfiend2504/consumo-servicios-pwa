@@ -35,13 +35,14 @@ jobs:
             echo "Missing FIREBASE_CONFIG_JSON secret" >&2
             exit 1
           fi
-          cat > js/firebase-config.js <<EOF
-// ============================================================
-// Firebase Configuration (Generado automáticamente por CI/CD)
-// ============================================================
-
-window.__FIREBASE_CONFIG__ = $FIREBASE_CONFIG_JSON;
-EOF
+          mkdir -p js
+          echo "// Firebase Configuration (Generado automáticamente por CI/CD)" > js/firebase-config.js
+          printf 'const firebaseConfig = %s\n' "$FIREBASE_CONFIG_JSON" >> js/firebase-config.js
+          printf 'const FIREBASE_CONFIGURED = Boolean(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey != "TU_API_KEY_AQUI");\n' >> js/firebase-config.js
+          printf 'window.FIREBASE_CONFIGURED = FIREBASE_CONFIGURED;\n' >> js/firebase-config.js
+          printf 'let firebaseApp = null;\nlet auth = null;\nlet db = null;\n' >> js/firebase-config.js
+          printf 'window.firebaseApp = firebaseApp;\nwindow.auth = auth;\nwindow.db = db;\n' >> js/firebase-config.js
+          printf 'if (FIREBASE_CONFIGURED) { try { firebaseApp = firebase.initializeApp(firebaseConfig); auth = firebase.auth(); db = firebase.firestore(); window.firebaseApp = firebaseApp; window.auth = auth; window.db = db; console.log("✅ Firebase inicializado correctamente"); } catch (e) { console.warn("⚠️ Error al inicializar Firebase:", e); } } else { console.log("ℹ️ Firebase no configurado — usando localStorage como fallback"); }\n' >> js/firebase-config.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
