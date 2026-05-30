@@ -229,7 +229,6 @@ const DataService = {
             const alertas = [];
             alertSnap.forEach(d => alertas.push({ id: d.id, ...d.data() }));
             localStorage.setItem('alertas', JSON.stringify(alertas));
-            console.log('✅ Datos sincronizados desde Firestore');
         } catch (e) { console.warn('Sync error:', e); }
     }
 };

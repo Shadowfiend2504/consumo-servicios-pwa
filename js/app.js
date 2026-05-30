@@ -12,6 +12,21 @@ const SERVICE_META = {
 let dashChartInstance = null;
 let dashCostChartInstance = null;
 
+function escapeHtml(value){
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeJsSingleQuoted(value){
+  return String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
+}
+
 // data access now goes through DataService which handles Firestore/localStorage logic
 async function getFacturas(){
   return await DataService.getFacturas();
@@ -211,10 +226,10 @@ async function loadPerfil(c){
     <div class="col-lg-6">
       <div class="profile-card">
         <h5 class="mb-3"><i class="bi bi-person me-2"></i>Datos del Hogar</h5>
-        <div class="mb-3"><label class="form-label">Nombre del hogar</label><input type="text" class="form-control" id="pNombre" value="${p.nombre||''}"></div>
-        <div class="mb-3"><label class="form-label">Correo</label><input type="email" class="form-control" id="pCorreo" value="${p.correo}" readonly style="background:#f8fafc"></div>
+        <div class="mb-3"><label class="form-label">Nombre del hogar</label><input type="text" class="form-control" id="pNombre" value="${escapeHtml(p.nombre||'')}"></div>
+        <div class="mb-3"><label class="form-label">Correo</label><input type="email" class="form-control" id="pCorreo" value="${escapeHtml(p.correo)}" readonly style="background:#f8fafc"></div>
         <div class="row g-3">
-          <div class="col-6"><label class="form-label">Zona / Barrio</label><input type="text" class="form-control" id="pZona" value="${p.zona||''}"></div>
+          <div class="col-6"><label class="form-label">Zona / Barrio</label><input type="text" class="form-control" id="pZona" value="${escapeHtml(p.zona||'')}"></div>
           <div class="col-6"><label class="form-label">Tipo de vivienda</label><select class="form-select" id="pTipo">
             <option value="">— Opcional —</option>
             <option value="casa" ${p.tipo==='casa'?'selected':''}>Casa</option>
@@ -295,16 +310,17 @@ function renderFacturasTable(facturas){
   facturas.sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||'')).forEach(f=>{
     const m=SERVICE_META[f.servicio]||SERVICE_META.agua;
     const estado=f.fecha_pago?'pagada':'pendiente';
+    const safeId=escapeJsSingleQuoted(f.id);
     rows+=`<tr>
       <td><span class="badge-service badge-${m.cls}"><i class="bi ${m.icon}"></i> ${m.label}</span></td>
-      <td>${f.periodo||'—'}</td>
+      <td>${escapeHtml(f.periodo||'—')}</td>
       <td><strong>${f.consumo} ${m.unit}</strong></td>
       <td>$${Number(f.valor).toLocaleString('es-CO')}</td>
-      <td>${f.fecha_corte||'—'}</td>
+      <td>${escapeHtml(f.fecha_corte||'—')}</td>
       <td><span class="badge-status badge-${estado}">${estado==='pagada'?'Pagada':'Pendiente'}</span></td>
       <td>
-        ${estado==='pendiente'?`<button class="btn btn-sm btn-outline-primary" onclick="marcarPagada('${f.id}')">Pagar</button>`:''}
-        <button class="btn btn-sm btn-outline-secondary" onclick="eliminarFactura('${f.id}')"><i class="bi bi-trash"></i></button>
+        ${estado==='pendiente'?`<button class="btn btn-sm btn-outline-primary" onclick="marcarPagada('${safeId}')">Pagar</button>`:''}
+        <button class="btn btn-sm btn-outline-secondary" onclick="eliminarFactura('${safeId}')"><i class="bi bi-trash"></i></button>
       </td>
     </tr>`;
   });
@@ -365,7 +381,7 @@ async function loadAnalisis(c){
       const abs=(cur.consumo-prev.consumo).toFixed(1);
       const pct=prev.consumo>0?((cur.consumo-prev.consumo)/prev.consumo*100).toFixed(1):'—';
       const cls=pct>0?'trend-up':pct<0?'trend-down':'trend-stable';
-      varRows+=`<tr><td>${cur.periodo}</td><td>${cur.consumo}</td><td class="${cls}">${abs>0?'+':''}${abs}</td><td class="${cls}">${pct}%</td></tr>`;
+      varRows+=`<tr><td>${escapeHtml(cur.periodo)}</td><td>${cur.consumo}</td><td class="${cls}">${abs>0?'+':''}${abs}</td><td class="${cls}">${pct}%</td></tr>`;
     }
 
     statsHtml+=`<div class="data-card">
@@ -444,19 +460,20 @@ function renderAlertsList(alertas){
     const realIdx=alertas.length-1-idx;
     const tipo=a.tipo==='variación'||a.tipo==='exceso'?'warning':'info';
     const m=SERVICE_META[a.servicio]||{label:a.servicio,icon:'bi-circle',cls:'agua'};
+    const estado=['nueva','revisada','atendida'].includes(a.estado)?a.estado:'nueva';
     html+=`<div class="alert-card ${tipo}">
       <div class="alert-icon ${tipo}"><i class="bi ${m.icon}"></i></div>
       <div class="flex-grow-1">
         <div class="d-flex align-items-center gap-2 mb-1">
           <strong>${m.label}</strong>
-          <span class="badge-status badge-${a.estado}">${a.estado}</span>
+          <span class="badge-status badge-${estado}">${escapeHtml(estado)}</span>
         </div>
-        <p class="mb-1 small">${a.mensaje}</p>
-        <small class="text-muted">${a.fecha?a.fecha.split('T')[0]:''}</small>
+        <p class="mb-1 small">${escapeHtml(a.mensaje)}</p>
+        <small class="text-muted">${escapeHtml(a.fecha?a.fecha.split('T')[0]:'')}</small>
       </div>
       <div class="d-flex flex-column gap-1">
-        ${a.estado==='nueva'?`<button class="btn btn-sm btn-outline-primary" onclick="cambiarEstadoAlerta(${realIdx},'revisada')">Revisar</button>`:''}
-        ${a.estado!=='atendida'?`<button class="btn btn-sm btn-outline-success" onclick="cambiarEstadoAlerta(${realIdx},'atendida')">Atender</button>`:''}
+        ${estado==='nueva'?`<button class="btn btn-sm btn-outline-primary" onclick="cambiarEstadoAlerta(${realIdx},'revisada')">Revisar</button>`:''}
+        ${estado!=='atendida'?`<button class="btn btn-sm btn-outline-success" onclick="cambiarEstadoAlerta(${realIdx},'atendida')">Atender</button>`:''}
       </div>
     </div>`;
   });

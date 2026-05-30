@@ -180,11 +180,28 @@
       return { ok: true };
     }
 
+    function safeParse(value, fallback) {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed == null ? fallback : parsed;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
     function validarEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function registrarUsuario(event) {
       event.preventDefault();
-      console.log('registrarUsuario - FIREBASE_CONFIGURED=', window.FIREBASE_CONFIGURED || Boolean(window.__FIREBASE_CONFIG__), 'auth=', window.auth || window.firebaseAuth);
       const nombre = document.getElementById('nombre').value.trim();
       const email = document.getElementById('email').value.trim();
       const telefono = document.getElementById('telefono').value.trim();
@@ -203,13 +220,15 @@
       if (!terminos) { showToast('Acepta los términos', { type: 'warning' }); return; }
 
       // Firebase Auth
-      if ((window.FIREBASE_CONFIGURED || Boolean(window.__FIREBASE_CONFIG__)) && (window.auth || window.firebaseAuth)) {
+      const firebaseAuth = window.auth || window.firebaseAuth || null;
+      const firestoreDb = window.db || window.firebaseDb || null;
+      if ((window.FIREBASE_CONFIGURED || Boolean(window.__FIREBASE_CONFIG__)) && firebaseAuth) {
         try {
-          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          const cred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
           await cred.user.updateProfile({ displayName: nombre });
           // Save profile in Firestore
-          if (db) {
-            await db.collection('users').doc(cred.user.uid).set({
+          if (firestoreDb) {
+            await firestoreDb.collection('users').doc(cred.user.uid).set({
               perfil: {
                 nombre, correo: email, telefono, documento, zona: '', tipo: '',
                 servicios: { agua: true, energia: true, gas: true, internet: true },
@@ -229,7 +248,7 @@
       }
 
       // Fallback localStorage
-      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+  const usuarios = safeParse(localStorage.getItem('usuarios'), []);
       if (usuarios.some(u => u.email === email)) { showToast('Correo ya registrado', { type: 'warning' }); return; }
       if (usuarios.some(u => u.documento === documento)) { showToast('Documento ya registrado', { type: 'warning' }); return; }
       usuarios.push({ id: Date.now().toString(), nombre, email, telefono, documento, password: btoa(password), fecha_registro: new Date().toISOString(), activo: true });
@@ -244,8 +263,10 @@
       const container = document.getElementById('toast-container');
       if (!container) { alert(message); return; }
       const id = 'toast-' + Date.now();
-      const cls = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : type === 'warning' ? 'alert-warning' : 'alert-info';
-      container.insertAdjacentHTML('beforeend', `<div id="${id}" class="alert ${cls} alert-dismissible fade show" role="alert"><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+      const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+      const cls = safeType === 'success' ? 'alert-success' : safeType === 'error' ? 'alert-danger' : safeType === 'warning' ? 'alert-warning' : 'alert-info';
+      const safeMessage = escapeHtml(message);
+      container.insertAdjacentHTML('beforeend', `<div id="${id}" class="alert ${cls} alert-dismissible fade show" role="alert"><strong>${safeType.charAt(0).toUpperCase() + safeType.slice(1)}:</strong> ${safeMessage}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
       setTimeout(() => { const el = document.getElementById(id); if (el) el.remove(); }, delay || 5000);
     }
 

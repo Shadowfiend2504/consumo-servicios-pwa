@@ -5,20 +5,36 @@
 function isFbConfigured() { return Boolean(window.FIREBASE_CONFIGURED || window.__FIREBASE_CONFIG__); }
 function fbAuth() { return window.auth || window.firebaseAuth || null; }
 function fbDb() { return window.db || window.firebaseDb || null; }
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function safeParse(value, fallback) {
+  try {
+    const parsed = JSON.parse(value);
+    return parsed == null ? fallback : parsed;
+  } catch (e) {
+    return fallback;
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   const FB_AUTH = fbAuth();
 
   if (isFbConfigured() && FB_AUTH) {
-    FB_AUTH.onAuthStateChanged(function (user) {
+    FB_AUTH.onAuthStateChanged(async function (user) {
       if (user) {
         localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userName', user.displayName || user.email.split('@')[0]);
         localStorage.setItem('userId', user.uid);
-        showDashboard();
         if (window.DataService && typeof window.DataService.syncFromFirestore === 'function') {
-          window.DataService.syncFromFirestore();
+          await window.DataService.syncFromFirestore();
         }
+        showDashboard();
       } else {
         showLogin();
       }
@@ -98,7 +114,7 @@ async function login(event) {
 
   // Fallback: localStorage
   try {
-    const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+    const usuarios = safeParse(localStorage.getItem('usuarios'), []);
     const user = usuarios.find(u => u.email === email);
     if (!user) { showToast('Correo o contraseña incorrectos', { type: 'warning' }); return; }
     if (atob(user.password) !== password) { showToast('Correo o contraseña incorrectos', { type: 'warning' }); return; }
@@ -152,10 +168,12 @@ function showToast(message, options = {}) {
   const container = document.getElementById('toast-container');
   if (!container) { alert(message); return; }
   const toastId = 'toast-' + Date.now();
-  const cls = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : type === 'warning' ? 'alert-warning' : 'alert-info';
+  const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+  const cls = safeType === 'success' ? 'alert-success' : safeType === 'error' ? 'alert-danger' : safeType === 'warning' ? 'alert-warning' : 'alert-info';
+  const safeMessage = escapeHtml(message);
   container.insertAdjacentHTML('beforeend', `
     <div id="${toastId}" class="alert ${cls} alert-dismissible fade show" role="alert" style="min-width:280px">
-      <strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${message}
+      <strong>${safeType.charAt(0).toUpperCase() + safeType.slice(1)}:</strong> ${safeMessage}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>`);
   setTimeout(() => { const el = document.getElementById(toastId); if (el) el.remove(); }, delay || 5000);
@@ -177,7 +195,7 @@ document.addEventListener('keypress', function (e) {
 document.addEventListener('DOMContentLoaded', function () {
   const FB_CONFIGURED = Boolean(window.FIREBASE_CONFIGURED);
   if (!FB_CONFIGURED) {
-    const existing = JSON.parse(localStorage.getItem('usuarios'));
+    const existing = safeParse(localStorage.getItem('usuarios'), null);
     if (!existing || existing.length === 0) {
       localStorage.setItem('usuarios', JSON.stringify([{
         id: '1', nombre: 'Usuario Demostración', email: 'demo@ejemplo.com',
