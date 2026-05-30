@@ -30,7 +30,7 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ vars.FIREBASE_CONFIG_JSON }}
         run: |
           if [ -z "$FIREBASE_CONFIG_JSON" ]; then
-            echo "Missing FIREBASE_CONFIG_JSON secret" >&2
+            echo "Missing FIREBASE_CONFIG_JSON variable" >&2
             exit 1
           fi
 
