@@ -1,8 +1,8 @@
 {
   "name": "Control de Consumo",
   "short_name": "Consumo",
-  "start_url": "/consumo-servicios-pwa/index.html",
-  "scope": "/consumo-servicios-pwa/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0b5cff",

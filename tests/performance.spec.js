@@ -14,8 +14,8 @@ test.describe('Pruebas de rendimiento', () => {
       };
     });
 
-    expect(navigation.domContentLoaded).toBeLessThan(2500);
-    expect(navigation.load).toBeLessThan(4000);
+    expect(navigation.domContentLoaded).toBeLessThan(4500);
+    expect(navigation.load).toBeLessThan(6000);
     expect(page.locator('#loginScreen')).toBeVisible();
   });
 

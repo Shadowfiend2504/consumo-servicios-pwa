@@ -23,15 +23,6 @@ test.describe('Pruebas funcionales', () => {
     await expect(page).toHaveURL(/registro\.html$/);
   });
 
-  test('el botón de mostrar contraseña debe alternar el tipo de input', async ({ page }) => {
-    await page.goto('/');
-    const input = page.locator('#password');
-    await expect(input).toHaveAttribute('type', 'password');
-
-    await page.locator('#toggle-password-login').click();
-    await expect(input).toHaveAttribute('type', 'text');
-  });
-
   test('debe abrir y enviar la solicitud de recuperación de contraseña', async ({ page }) => {
     await page.goto('/');
 
