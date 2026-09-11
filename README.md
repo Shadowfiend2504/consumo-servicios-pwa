@@ -96,6 +96,19 @@ Para que el botón "Olvidé mi contraseña" envíe correos reales:
 3. Verifica que `js/firebase-config.js` tenga credenciales válidas (no placeholders).
 4. Opcional: personaliza la plantilla en `Authentication` → `Templates` → `Password reset`.
 
+### Flujo de nueva contraseña en la app
+
+La app ahora incluye una pantalla dedicada para guardar la nueva contraseña:
+
+- `reset-password.html`
+- `js/reset-password.js`
+
+Este flujo valida el `oobCode`, guarda la nueva contraseña en Firebase con `confirmPasswordReset` y luego redirige al login.
+
+Si en tu proyecto Firebase tienes habilitada una URL personalizada para el correo de recuperación, apunta al endpoint:
+
+- `/reset-password.html`
+
 Si Firebase no está configurado, la app mostrará un error y no simulará envíos por `localStorage`.
 
 En GitHub Pages solo necesitas un secreto:

@@ -32,11 +32,11 @@ function closeRecoverPasswordModal() {
 
 function getResetActionCodeSettings() {
   const currentUrl = new URL(window.location.href);
-  const path = currentUrl.pathname.replace(/\/[^/]*$/, '/index.html');
+  const path = currentUrl.pathname.replace(/\/[^/]*$/, '/reset-password.html');
   const resetTargetUrl = `${currentUrl.origin}${path}`;
   return {
-    url: `${resetTargetUrl}?reset=1`,
-    handleCodeInApp: false
+    url: resetTargetUrl,
+    handleCodeInApp: true
   };
 }
 
