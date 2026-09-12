@@ -11,6 +11,10 @@ const SERVICE_META = {
 
 let dashChartInstance = null;
 let dashCostChartInstance = null;
+let dashServiceChartInstance = null;
+let dashOutlierChartInstance = null;
+let dashScatterChartInstance = null;
+let dashMonthsChartInstance = null;
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -127,11 +131,27 @@ async function loadInicio(c){
     <div class="gap-grid gap-grid-2 mb-4">
       <div class="data-card">
         <div class="data-card-header"><h5><i class="bi bi-bar-chart-line me-2"></i>Consumo por Servicio</h5></div>
-        <div class="data-card-body"><div class="chart-container"><canvas id="dashChart"></canvas></div></div>
+        <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashChart"></canvas></div></div>
       </div>
       <div class="data-card">
         <div class="data-card-header"><h5><i class="bi bi-cash-stack me-2"></i>Costo por Servicio</h5></div>
-        <div class="data-card-body"><div class="chart-container"><canvas id="dashCostChart"></canvas></div></div>
+        <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashCostChart"></canvas></div></div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-header"><h5><i class="bi bi-pie-chart me-2"></i>Distribución por Servicio</h5></div>
+        <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashServiceChart"></canvas></div></div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-header"><h5><i class="bi bi-exclamation-diamond me-2"></i>Valores Atípicos</h5></div>
+        <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashOutlierChart"></canvas></div></div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-header"><h5><i class="bi bi-scatter-chart me-2"></i>Consumo y Valor por Servicio</h5></div>
+        <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashScatterChart"></canvas></div></div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-header"><h5><i class="bi bi-arrow-down-up me-2"></i>Meses de Mayor y Menor Consumo</h5></div>
+        <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashMonthsChart"></canvas></div></div>
       </div>
     </div>`;
 
@@ -153,6 +173,13 @@ function renderDashCharts(facturas, activos){
   if(typeof Chart==='undefined') return;
   const periodos=[...new Set(facturas.map(f=>f.periodo))].sort();
   const last6=periodos.slice(-6);
+  const colors={agua:'#0ea5e9',energia:'#f59e0b',gas:'#ef4444',internet:'#10b981'};
+  const records=facturas.map(f=>({
+    ...f,
+    consumo:Number(f.consumo)||0,
+    valor:Number(f.valor)||0
+  }));
+  const chartOptions={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}};
   // Consumption chart
   const canvas1=document.getElementById('dashChart');
   if(canvas1){
@@ -162,7 +189,6 @@ function renderDashCharts(facturas, activos){
     }
     const datasets=activos.map(svc=>{
       const m=SERVICE_META[svc];
-      const colors={agua:'#0ea5e9',energia:'#f59e0b',gas:'#ef4444',internet:'#10b981'};
       return {
         label:m.label,
         data:last6.map(p=>{ const f=facturas.find(x=>x.servicio===svc&&x.periodo===p); return f?f.consumo:0; }),
@@ -179,7 +205,6 @@ function renderDashCharts(facturas, activos){
       dashCostChartInstance = null;
     }
     const datasets=activos.map(svc=>{
-      const colors={agua:'#0ea5e9',energia:'#f59e0b',gas:'#ef4444',internet:'#10b981'};
       return {
         label:SERVICE_META[svc].label,
         data:last6.map(p=>{ const f=facturas.find(x=>x.servicio===svc&&x.periodo===p); return f?f.valor:0; }),
@@ -187,6 +212,46 @@ function renderDashCharts(facturas, activos){
       };
     });
     dashCostChartInstance = new Chart(canvas2,{type:'bar',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
+  }
+
+  const destroyChart=(instance)=>{ if(instance) instance.destroy(); };
+
+  const canvas3=document.getElementById('dashServiceChart');
+  if(canvas3){
+    destroyChart(dashServiceChartInstance);
+    const totals=activos.map(svc=>records.filter(f=>f.servicio===svc).reduce((sum,f)=>sum+f.consumo,0));
+    dashServiceChartInstance=new Chart(canvas3,{type:'doughnut',data:{labels:activos.map(svc=>SERVICE_META[svc].label),datasets:[{data:totals,backgroundColor:activos.map(svc=>colors[svc]),borderWidth:2,borderColor:'#fff'}]},options:{...chartOptions,cutout:'58%'}});
+  }
+
+  const outliers=[];
+  activos.forEach(svc=>{
+    const values=records.filter(f=>f.servicio===svc).map(f=>f.consumo).sort((a,b)=>a-b);
+    if(values.length<4) return;
+    const q1=values[Math.floor((values.length-1)*0.25)];
+    const q3=values[Math.floor((values.length-1)*0.75)];
+    const range=q3-q1;
+    records.filter(f=>f.servicio===svc && (f.consumo<q1-1.5*range || f.consumo>q3+1.5*range)).forEach(f=>outliers.push(f));
+  });
+  const canvas4=document.getElementById('dashOutlierChart');
+  if(canvas4){
+    destroyChart(dashOutlierChartInstance);
+    const outlierLabels=outliers.length?outliers.map(f=>`${SERVICE_META[f.servicio].label} · ${f.periodo}`):['Sin valores atípicos'];
+    dashOutlierChartInstance=new Chart(canvas4,{type:'bar',data:{labels:outlierLabels,datasets:[{label:'Consumo',data:outliers.length?outliers.map(f=>f.consumo):[0],backgroundColor:outliers.length?outliers.map(f=>colors[f.servicio]):['#cbd5e1'],borderColor:'#dc2626',borderWidth:1}]},options:{...chartOptions,scales:{y:{beginAtZero:true}}}});
+  }
+
+  const canvas5=document.getElementById('dashScatterChart');
+  if(canvas5){
+    destroyChart(dashScatterChartInstance);
+    const datasets=activos.map(svc=>({label:SERVICE_META[svc].label,data:records.filter(f=>f.servicio===svc).map(f=>({x:f.consumo,y:f.valor,periodo:f.periodo})),backgroundColor:colors[svc],pointRadius:5}));
+    dashScatterChartInstance=new Chart(canvas5,{type:'scatter',data:{datasets},options:{...chartOptions,scales:{x:{beginAtZero:true,title:{display:true,text:'Consumo'}},y:{beginAtZero:true,title:{display:true,text:'Valor ($)'}}},plugins:{...chartOptions.plugins,tooltip:{callbacks:{label:context=>`${context.dataset.label} · ${context.raw.periodo}: ${context.raw.x} / $${Number(context.raw.y).toLocaleString('es-CO')}`}}}}});
+  }
+
+  const canvas6=document.getElementById('dashMonthsChart');
+  if(canvas6){
+    destroyChart(dashMonthsChartInstance);
+    const monthTotals=periodos.map(periodo=>records.filter(f=>f.periodo===periodo).reduce((sum,f)=>sum+f.consumo,0));
+    const max=Math.max(...monthTotals), min=Math.min(...monthTotals);
+    dashMonthsChartInstance=new Chart(canvas6,{type:'bar',data:{labels:periodos,datasets:[{label:'Consumo total',data:monthTotals,backgroundColor:monthTotals.map(value=>value===max?'#16a34a':value===min?'#dc2626':'#94a3b8'),borderRadius:4}]},options:{...chartOptions,scales:{y:{beginAtZero:true}}}});
   }
 }
 

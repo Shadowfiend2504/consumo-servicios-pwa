@@ -597,6 +597,11 @@ html, body {
   max-height: 320px;
 }
 
+.dashboard-chart {
+  height: 300px;
+  max-height: none;
+}
+
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 768px) {
   .sidebar {
