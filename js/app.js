@@ -15,6 +15,7 @@ let dashServiceChartInstance = null;
 let dashOutlierChartInstance = null;
 let dashScatterChartInstance = null;
 let dashMonthsChartInstance = null;
+const dashServiceChartInstances = {};
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -153,6 +154,13 @@ async function loadInicio(c){
         <div class="data-card-header"><h5><i class="bi bi-arrow-down-up me-2"></i>Meses de Mayor y Menor Consumo</h5></div>
         <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashMonthsChart"></canvas></div></div>
       </div>
+      ${Object.keys(SERVICE_META).map(svc=>{
+        const m=SERVICE_META[svc];
+        return `<div class="data-card service-chart-card">
+          <div class="data-card-header"><h5><i class="bi ${m.icon} me-2"></i>Consumo de ${m.label}</h5></div>
+          <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashService-${svc}"></canvas></div></div>
+        </div>`;
+      }).join('')}
     </div>`;
 
   // Alerts banner
@@ -253,6 +261,18 @@ function renderDashCharts(facturas, activos){
     const max=Math.max(...monthTotals), min=Math.min(...monthTotals);
     dashMonthsChartInstance=new Chart(canvas6,{type:'bar',data:{labels:periodos,datasets:[{label:'Consumo total',data:monthTotals,backgroundColor:monthTotals.map(value=>value===max?'#16a34a':value===min?'#dc2626':'#94a3b8'),borderRadius:4}]},options:{...chartOptions,scales:{y:{beginAtZero:true}}}});
   }
+
+  Object.keys(SERVICE_META).forEach(svc=>{
+    const canvas=document.getElementById(`dashService-${svc}`);
+    if(!canvas) return;
+    destroyChart(dashServiceChartInstances[svc]);
+    const meta=SERVICE_META[svc];
+    const data=last6.map(periodo=>{
+      const record=records.find(f=>f.servicio===svc&&f.periodo===periodo);
+      return record?record.consumo:0;
+    });
+    dashServiceChartInstances[svc]=new Chart(canvas,{type:'line',data:{labels:last6,datasets:[{label:`Consumo (${meta.unit})`,data,borderColor:colors[svc],backgroundColor:colors[svc]+'25',pointBackgroundColor:colors[svc],pointRadius:4,tension:0.35,fill:true}]},options:{...chartOptions,plugins:{legend:{display:false},tooltip:{callbacks:{label:context=>`${context.parsed.y} ${meta.unit}`}}},scales:{y:{beginAtZero:true,title:{display:true,text:meta.unit}}}}});
+  });
 }
 
 async function updateAlertBadges(){
