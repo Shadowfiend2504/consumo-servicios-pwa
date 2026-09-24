@@ -124,7 +124,7 @@
   <a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>
 
   <!-- Barra de navegación superior fija compatible con PWA móvil -->
-  <header class="navbar-header sticky-top" style="position: sticky; top: 0; z-index: 1050; border-bottom: 1px solid rgba(255,255,255,0.1);">
+  <header class="navbar-header sticky-top" style="position: sticky; top: 0; z-index: 1050; border-bottom: 1px solid rgba(255,255,255,0.1); background: #0f172a;">
     <div class="d-flex align-items-center h-100 w-100">
       <div class="d-flex align-items-center gap-3">
         <div class="brand-logo">
@@ -133,9 +133,9 @@
         <span class="page-title d-none d-sm-inline">Términos y Condiciones</span>
       </div>
       <div class="ms-auto d-flex align-items-center gap-2">
-        <button class="btn btn-logout d-flex align-items-center gap-2" onclick="volverApp()" aria-label="Volver a la aplicación" title="Volver a la aplicación">
+        <button class="btn btn-primary d-flex align-items-center gap-2 px-3 py-1 shadow-sm" onclick="volverApp()" aria-label="Volver a la aplicación" title="Volver a la aplicación" style="background: #0b5cff; border: 1px solid rgba(255,255,255,0.4); font-weight: 600; border-radius: 8px;">
           <i class="bi bi-arrow-left"></i>
-          <span class="fw-semibold">Volver a la App</span>
+          <span>Volver</span>
         </button>
       </div>
     </div>
@@ -148,10 +148,21 @@
           <h1><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Términos y Condiciones</h1>
           <p>Sistema para el Seguimiento del Consumo de Servicios Públicos - Aplicación Web Progresiva (PWA)</p>
         </div>
-        <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" onclick="volverApp()">
-          <i class="bi bi-arrow-left"></i> <span>Regresar</span>
+        <button class="btn btn-light text-dark fw-bold d-flex align-items-center gap-2 px-3 py-1 shadow-sm" onclick="volverApp()">
+          <i class="bi bi-arrow-left"></i> <span>Regresar a la App</span>
         </button>
       </header>
+
+      <!-- Banner de navegación rápida para usuarios móviles -->
+      <div class="p-3 bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-info-circle-fill text-primary"></i>
+          <span class="small text-muted">Estás consultando los Términos y Condiciones del Sistema.</span>
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" onclick="volverApp()">
+          <i class="bi bi-arrow-left me-1"></i> Volver a la App
+        </button>
+      </div>
 
       <section class="terms-meta" aria-label="Información legal del proyecto">
         <div><strong>Versión:</strong> 1.0</div>
@@ -322,10 +333,10 @@
   </main>
 
   <!-- Botón flotante para regreso rápido en móviles -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
-    <button type="button" class="btn btn-primary rounded-pill shadow-lg d-flex align-items-center gap-2 py-2 px-3" onclick="volverApp()" aria-label="Volver a la aplicación">
-      <i class="bi bi-arrow-left"></i>
-      <span class="fw-semibold">Volver</span>
+  <div style="position: fixed; bottom: 24px; right: 20px; z-index: 99999;">
+    <button type="button" class="btn btn-primary rounded-pill shadow-lg d-flex align-items-center gap-2 py-2 px-3 border border-2 border-white" onclick="volverApp()" aria-label="Volver a la aplicación" style="background: #0b5cff; font-weight: 700; box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;">
+      <i class="bi bi-arrow-left-circle-fill fs-5"></i>
+      <span>Volver a la App</span>
     </button>
   </div>
 
