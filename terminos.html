@@ -4,8 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>Términos y Condiciones - Sistema para el Seguimiento del Consumo de Servicios Públicos</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <meta name="theme-color" content="#0b5cff">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/estilos.css">
@@ -119,11 +123,34 @@
 <body>
   <a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>
 
+  <!-- Barra de navegación superior fija compatible con PWA móvil -->
+  <header class="navbar-header sticky-top" style="position: sticky; top: 0; z-index: 1050; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div class="d-flex align-items-center h-100 w-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="brand-logo">
+          <span class="brand-text">UAN</span>
+        </div>
+        <span class="page-title d-none d-sm-inline">Términos y Condiciones</span>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <button class="btn btn-logout d-flex align-items-center gap-2" onclick="volverApp()" aria-label="Volver a la aplicación" title="Volver a la aplicación">
+          <i class="bi bi-arrow-left"></i>
+          <span class="fw-semibold">Volver a la App</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
   <main id="contenido-principal" class="terms-wrapper" aria-label="Términos y condiciones del Sistema para el Seguimiento del Consumo de Servicios Públicos">
     <div class="terms-card">
-      <header class="terms-header">
-        <h1><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Términos y Condiciones</h1>
-        <p>Sistema para el Seguimiento del Consumo de Servicios Públicos - Aplicación Web Progresiva (PWA)</p>
+      <header class="terms-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h1><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Términos y Condiciones</h1>
+          <p>Sistema para el Seguimiento del Consumo de Servicios Públicos - Aplicación Web Progresiva (PWA)</p>
+        </div>
+        <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" onclick="volverApp()">
+          <i class="bi bi-arrow-left"></i> <span>Regresar</span>
+        </button>
       </header>
 
       <section class="terms-meta" aria-label="Información legal del proyecto">
@@ -282,8 +309,42 @@
           Documento alineado con la Ley 1581 de 2012, la Ley 1266 de 2008, la Ley 1712 de 2014, la Ley 1341 de 2009 y el Decreto 1078 de 2015.
         </p>
       </section>
+
+      <!-- Barra inferior de acciones -->
+      <footer class="p-3 bg-light border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <small class="text-muted"><i class="bi bi-shield-check text-success me-1"></i>Documento legal y política de privacidad</small>
+        <div class="d-flex gap-2">
+          <a href="#contenido-principal" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-up me-1"></i>Subir</a>
+          <button type="button" class="btn btn-primary btn-sm px-3" onclick="volverApp()"><i class="bi bi-arrow-left me-1"></i>Volver a la App</button>
+        </div>
+      </footer>
     </div>
   </main>
+
+  <!-- Botón flotante para regreso rápido en móviles -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
+    <button type="button" class="btn btn-primary rounded-pill shadow-lg d-flex align-items-center gap-2 py-2 px-3" onclick="volverApp()" aria-label="Volver a la aplicación">
+      <i class="bi bi-arrow-left"></i>
+      <span class="fw-semibold">Volver</span>
+    </button>
+  </div>
+
+  <script>
+    function volverApp() {
+      // 1. Si se abrió en popup / pestaña mediante window.open
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
+      }
+      // 2. Si hay historial dentro de la misma navegación/webview
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+      // 3. Fallback en PWA cuando se abre como entrada única
+      window.location.href = 'index.html';
+    }
+  </script>
 </body>
 
 </html>
