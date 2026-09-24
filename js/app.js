@@ -139,7 +139,7 @@ async function loadInicio(c){
         <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashCostChart"></canvas></div></div>
       </div>
       <div class="data-card">
-        <div class="data-card-header"><h5><i class="bi bi-pie-chart me-2"></i>Distribución por Servicio</h5></div>
+        <div class="data-card-header"><h5><i class="bi bi-pie-chart me-2"></i>Distribución del Gasto por Servicio</h5></div>
         <div class="data-card-body"><div class="chart-container dashboard-chart"><canvas id="dashServiceChart"></canvas></div></div>
       </div>
       <div class="data-card">
@@ -177,6 +177,60 @@ async function loadInicio(c){
   renderDashCharts(facturas, activos);
 }
 
+// ---------- Helpers de gráficos ----------
+const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+// "2025-03" -> "mar 2025". Si el formato es otro, lo deja tal cual.
+function formatPeriodo(p){
+  const m = /^(\d{4})-(\d{2})/.exec(String(p ?? ''));
+  if(!m) return String(p ?? '');
+  const mes = MESES_ABR[Number(m[2]) - 1];
+  return mes ? `${mes} ${m[1]}` : String(p);
+}
+
+// Eje X reutilizable con título y etiquetas legibles
+function xAxisPeriodo(titulo = 'Período (mes)'){
+  return {
+    title: { display: true, text: titulo, font: { size: 12, weight: '600' } },
+    grid: { display: false },
+    ticks: {
+      maxRotation: 45,
+      minRotation: 0,
+      autoSkip: true,
+      font: { size: 11 },
+      callback: function(value){ return formatPeriodo(this.getLabelForValue(value)); }
+    }
+  };
+}
+
+// Título del tooltip con el período formateado
+const tooltipTituloPeriodo = {
+  callbacks: { title: items => items.length ? formatPeriodo(items[0].label) : '' }
+};
+
+// Plugin: dibuja el porcentaje dentro de cada porción de la dona
+const porcentajeDonaPlugin = {
+  id: 'porcentajeDona',
+  afterDatasetsDraw(chart){
+    const ds = chart.data.datasets[0];
+    const total = ds.data.reduce((a, b) => a + b, 0);
+    if(!total) return;
+    const { ctx } = chart;
+    chart.getDatasetMeta(0).data.forEach((arc, i) => {
+      const pct = ds.data[i] / total * 100;
+      if(pct < 4 || arc.hidden) return; // evita texto en porciones muy pequeñas
+      const pos = arc.tooltipPosition();
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pct.toFixed(1) + '%', pos.x, pos.y);
+      ctx.restore();
+    });
+  }
+};
+
 function renderDashCharts(facturas, activos){
   if(typeof Chart==='undefined') return;
   const periodos=[...new Set(facturas.map(f=>f.periodo))].sort();
@@ -203,7 +257,21 @@ function renderDashCharts(facturas, activos){
         borderColor:colors[svc], backgroundColor:colors[svc]+'20', tension:0.4, borderWidth:2, fill:true
       };
     });
-    dashChartInstance = new Chart(canvas1,{type:'line',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
+    dashChartInstance = new Chart(canvas1,{
+      type:'line',
+      data:{labels:last6,datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+          tooltip:tooltipTituloPeriodo
+        },
+        scales:{
+          x:xAxisPeriodo('Período (mes)'),
+          y:{beginAtZero:true,title:{display:true,text:'Consumo'}}
+        }
+      }
+    });
   }
   // Cost chart
   const canvas2=document.getElementById('dashCostChart');
@@ -219,16 +287,70 @@ function renderDashCharts(facturas, activos){
         backgroundColor:colors[svc]+'80', borderColor:colors[svc], borderWidth:1
       };
     });
-    dashCostChartInstance = new Chart(canvas2,{type:'bar',data:{labels:last6,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
+    dashCostChartInstance = new Chart(canvas2,{
+      type:'bar',
+      data:{labels:last6,datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+          tooltip:{callbacks:{
+            title:items=>items.length?formatPeriodo(items[0].label):'',
+            label:c=>`${c.dataset.label}: $${Number(c.parsed.y).toLocaleString('es-CO')}`
+          }}
+        },
+        scales:{
+          x:xAxisPeriodo('Período (mes)'),
+          y:{beginAtZero:true,title:{display:true,text:'Valor ($)'}}
+        }
+      }
+    });
   }
 
   const destroyChart=(instance)=>{ if(instance) instance.destroy(); };
 
+  // Distribución (dona) con porcentajes
   const canvas3=document.getElementById('dashServiceChart');
   if(canvas3){
     destroyChart(dashServiceChartInstance);
-    const totals=activos.map(svc=>records.filter(f=>f.servicio===svc).reduce((sum,f)=>sum+f.consumo,0));
-    dashServiceChartInstance=new Chart(canvas3,{type:'doughnut',data:{labels:activos.map(svc=>SERVICE_META[svc].label),datasets:[{data:totals,backgroundColor:activos.map(svc=>colors[svc]),borderWidth:2,borderColor:'#fff'}]},options:{...chartOptions,cutout:'58%'}});
+    // Se usa el VALOR ($) porque es comparable entre servicios (m³, kWh y Mbps no se pueden sumar)
+    const totals=activos.map(svc=>records.filter(f=>f.servicio===svc).reduce((sum,f)=>sum+f.valor,0));
+    const totalGeneral=totals.reduce((a,b)=>a+b,0);
+    const pct=v=>totalGeneral?(v/totalGeneral*100).toFixed(1):'0.0';
+
+    dashServiceChartInstance=new Chart(canvas3,{
+      type:'doughnut',
+      data:{
+        labels:activos.map(svc=>SERVICE_META[svc].label),
+        datasets:[{data:totals,backgroundColor:activos.map(svc=>colors[svc]),borderWidth:2,borderColor:'#fff'}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,cutout:'55%',
+        plugins:{
+          legend:{
+            position:'bottom',
+            labels:{
+              boxWidth:12,font:{size:11},
+              generateLabels:chart=>{
+                const ds=chart.data.datasets[0];
+                return chart.data.labels.map((label,i)=>({
+                  text:`${label}: ${pct(ds.data[i])}%`,
+                  fillStyle:ds.backgroundColor[i],
+                  strokeStyle:'#fff',
+                  lineWidth:1,
+                  hidden:!chart.getDataVisibility(i),
+                  index:i
+                }));
+              }
+            }
+          },
+          tooltip:{callbacks:{
+            label:c=>`${c.label}: $${Number(c.parsed).toLocaleString('es-CO')} (${pct(c.parsed)}%)`
+          }}
+        }
+      },
+      plugins:[porcentajeDonaPlugin]
+    });
   }
 
   const outliers=[];
@@ -254,12 +376,43 @@ function renderDashCharts(facturas, activos){
     dashScatterChartInstance=new Chart(canvas5,{type:'scatter',data:{datasets},options:{...chartOptions,scales:{x:{beginAtZero:true,title:{display:true,text:'Consumo'}},y:{beginAtZero:true,title:{display:true,text:'Valor ($)'}}},plugins:{...chartOptions.plugins,tooltip:{callbacks:{label:context=>`${context.dataset.label} · ${context.raw.periodo}: ${context.raw.x} / $${Number(context.raw.y).toLocaleString('es-CO')}`}}}}});
   }
 
+  // Meses de mayor y menor consumo
   const canvas6=document.getElementById('dashMonthsChart');
   if(canvas6){
     destroyChart(dashMonthsChartInstance);
     const monthTotals=periodos.map(periodo=>records.filter(f=>f.periodo===periodo).reduce((sum,f)=>sum+f.consumo,0));
     const max=Math.max(...monthTotals), min=Math.min(...monthTotals);
-    dashMonthsChartInstance=new Chart(canvas6,{type:'bar',data:{labels:periodos,datasets:[{label:'Consumo total',data:monthTotals,backgroundColor:monthTotals.map(value=>value===max?'#16a34a':value===min?'#dc2626':'#94a3b8'),borderRadius:4}]},options:{...chartOptions,scales:{y:{beginAtZero:true}}}});
+    dashMonthsChartInstance=new Chart(canvas6,{
+      type:'bar',
+      data:{labels:periodos,datasets:[{
+        label:'Consumo total',
+        data:monthTotals,
+        backgroundColor:monthTotals.map(value=>value===max?'#16a34a':value===min?'#dc2626':'#94a3b8'),
+        borderRadius:4
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{
+            position:'bottom',
+            labels:{
+              boxWidth:12,font:{size:11},
+              // Leyenda que explica los colores
+              generateLabels:()=>[
+                {text:'Mayor consumo',fillStyle:'#16a34a',strokeStyle:'#16a34a'},
+                {text:'Menor consumo',fillStyle:'#dc2626',strokeStyle:'#dc2626'},
+                {text:'Otros meses',fillStyle:'#94a3b8',strokeStyle:'#94a3b8'}
+              ]
+            }
+          },
+          tooltip:tooltipTituloPeriodo
+        },
+        scales:{
+          x:xAxisPeriodo('Período (mes)'),
+          y:{beginAtZero:true,title:{display:true,text:'Consumo total'}}
+        }
+      }
+    });
   }
 
   Object.keys(SERVICE_META).forEach(svc=>{
