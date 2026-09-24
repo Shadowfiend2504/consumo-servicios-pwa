@@ -522,7 +522,7 @@ async function loadPerfil(c){
         </div>
         <div class="d-flex flex-wrap gap-2 mt-4">
           <button class="btn btn-primary" onclick="guardarPerfil()"><i class="bi bi-check-circle me-1"></i>Guardar Perfil</button>
-          <a href="terminos.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-1"></i>Términos y Condiciones</a>
+          <a href="terminos.html" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-1"></i>Términos y Condiciones</a>
         </div>
       </div>
     </div>
