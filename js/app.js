@@ -365,8 +365,52 @@ function renderDashCharts(facturas, activos){
   const canvas4=document.getElementById('dashOutlierChart');
   if(canvas4){
     destroyChart(dashOutlierChartInstance);
-    const outlierLabels=outliers.length?outliers.map(f=>`${SERVICE_META[f.servicio].label} · ${f.periodo}`):['Sin valores atípicos'];
-    dashOutlierChartInstance=new Chart(canvas4,{type:'bar',data:{labels:outlierLabels,datasets:[{label:'Consumo',data:outliers.length?outliers.map(f=>f.consumo):[0],backgroundColor:outliers.length?outliers.map(f=>colors[f.servicio]):['#cbd5e1'],borderColor:'#dc2626',borderWidth:1}]},options:{...chartOptions,scales:{y:{beginAtZero:true}}}});
+    const outlierLabels=outliers.length?outliers.map(f=>`${SERVICE_META[f.servicio].label} · ${formatPeriodo(f.periodo)}`):['Sin valores atípicos'];
+    const serviciosAtipicos=[...new Set(outliers.map(f=>f.servicio))];
+    dashOutlierChartInstance=new Chart(canvas4,{
+      type:'bar',
+      data:{labels:outlierLabels,datasets:[{
+        label:'Consumo',
+        data:outliers.length?outliers.map(f=>f.consumo):[0],
+        backgroundColor:outliers.length?outliers.map(f=>colors[f.servicio]):['#cbd5e1'],
+        borderColor:'#dc2626',borderWidth:1
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{
+            position:'bottom',
+            onClick:()=>{}, // leyenda informativa: evita ocultar la serie al hacer clic
+            labels:{
+              boxWidth:12,font:{size:11},
+              // Leyenda: color de cada servicio con su unidad + significado del borde rojo
+              generateLabels:()=>{
+                if(!outliers.length) return [{text:'Sin valores atípicos',fillStyle:'#cbd5e1',strokeStyle:'#cbd5e1'}];
+                return [
+                  ...serviciosAtipicos.map(svc=>({
+                    text:`${SERVICE_META[svc].label} (${SERVICE_META[svc].unit})`,
+                    fillStyle:colors[svc],strokeStyle:colors[svc]
+                  })),
+                  {text:'Borde rojo = valor atípico',fillStyle:'#ffffff',strokeStyle:'#dc2626',lineWidth:2}
+                ];
+              }
+            }
+          },
+          tooltip:{callbacks:{
+            label:c=>{
+              if(!outliers.length) return 'Sin valores atípicos';
+              const f=outliers[c.dataIndex];
+              const meta=SERVICE_META[f.servicio];
+              return `${meta.label}: ${f.consumo} ${meta.unit}`;
+            }
+          }}
+        },
+        scales:{
+          x:{title:{display:true,text:'Servicio · Período',font:{size:12,weight:'600'}},grid:{display:false},ticks:{maxRotation:45,autoSkip:true,font:{size:11}}},
+          y:{beginAtZero:true,title:{display:true,text:'Consumo (unidad de cada servicio)'}}
+        }
+      }
+    });
   }
 
   const canvas5=document.getElementById('dashScatterChart');
@@ -395,6 +439,7 @@ function renderDashCharts(facturas, activos){
         plugins:{
           legend:{
             position:'bottom',
+            onClick:()=>{}, // leyenda informativa: evita ocultar la serie al hacer clic
             labels:{
               boxWidth:12,font:{size:11},
               // Leyenda que explica los colores
