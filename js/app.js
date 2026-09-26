@@ -727,7 +727,6 @@ async function loadAnalisis(c){
         <div class="d-flex align-items-center gap-2">
           <span class="small text-muted fw-500 d-none d-sm-inline">Período:</span>
           <div class="btn-group btn-group-sm" role="group" id="historicoRangoGroup">
-            <button type="button" class="btn btn-outline-primary" data-rango="1m">1 Mes</button>
             <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
             <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
             <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
@@ -752,7 +751,6 @@ async function loadAnalisis(c){
       <div class="d-flex align-items-center gap-2">
         <span class="small text-muted fw-500">Filtrar todos:</span>
         <div class="btn-group btn-group-sm" role="group" id="globalSvcRangoGroup">
-          <button type="button" class="btn btn-outline-primary" data-rango="1m">1 Mes</button>
           <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
           <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
           <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
@@ -773,7 +771,6 @@ async function loadAnalisis(c){
             <span class="trend-badge stable" id="svcTrendBadge-${svc}">Estable</span>
           </div>
           <div class="btn-group btn-group-sm svc-individual-filter-group" role="group" data-svc="${svc}">
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="1m">1m</button>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="3m">3m</button>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="6m">6m</button>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="12m">1a</button>
@@ -1291,56 +1288,267 @@ async function generateAlerts(facturas,perfil){
 
 // ============ REPORTES ============
 async function loadReportes(c){
-  const facturas=await getFacturas();
-  c.innerHTML=`
-    <div class="gap-grid gap-grid-2">
+  const facturas = await getFacturas();
+  const periodos = [...new Set(facturas.map(f => f.periodo))].sort();
+  const periMin  = periodos[0] || '';
+  const periMax  = periodos[periodos.length - 1] || '';
+
+  c.innerHTML = `
+    <div class="gap-grid gap-grid-2 mb-4">
       <div class="data-card">
-        <div class="data-card-header"><h5><i class="bi bi-file-earmark-spreadsheet me-2"></i>Reporte de Consumo</h5></div>
+        <div class="data-card-header">
+          <h5><i class="bi bi-file-earmark-spreadsheet me-2"></i>Reporte de Consumo</h5>
+        </div>
         <div class="data-card-body">
-          <p class="text-muted small">Exporta el historial completo de consumo en formato CSV</p>
-          <div class="mb-3"><label class="form-label small">Servicio</label><select class="form-select form-select-sm" id="repSvc">
-            <option value="">Todos</option>${Object.keys(SERVICE_META).map(s=>`<option value="${s}">${SERVICE_META[s].label}</option>`).join('')}
-          </select></div>
-          <button class="btn btn-primary btn-sm" onclick="exportarCSV()"><i class="bi bi-download me-1"></i>Descargar CSV</button>
+          <p class="text-muted small mb-3">Filtra y descarga el historial de consumo en CSV o Excel.</p>
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-500 mb-1">Servicio</label>
+              <select class="form-select form-select-sm" id="repSvc">
+                <option value="">Todos los servicios</option>
+                ${Object.keys(SERVICE_META).map(s=>`<option value="${s}">${SERVICE_META[s].emoji} ${SERVICE_META[s].label}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-6 col-sm-3">
+              <label class="form-label small fw-500 mb-1">Desde</label>
+              <input type="month" class="form-control form-control-sm" id="repDesde" value="${periMin}">
+            </div>
+            <div class="col-6 col-sm-3">
+              <label class="form-label small fw-500 mb-1">Hasta</label>
+              <input type="month" class="form-control form-control-sm" id="repHasta" value="${periMax}">
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="previsualizarReporte()">
+              <i class="bi bi-eye me-1"></i>Vista previa
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="exportarCSV()">
+              <i class="bi bi-filetype-csv me-1"></i>Descargar CSV
+            </button>
+            <button class="btn btn-success btn-sm" onclick="exportarExcel()">
+              <i class="bi bi-file-earmark-excel me-1"></i>Descargar Excel
+            </button>
+          </div>
         </div>
       </div>
+
       <div class="data-card">
-        <div class="data-card-header"><h5><i class="bi bi-file-earmark-text me-2"></i>Resumen de Alertas</h5></div>
+        <div class="data-card-header">
+          <h5><i class="bi bi-file-earmark-text me-2"></i>Resumen de Alertas</h5>
+        </div>
         <div class="data-card-body">
-          <p class="text-muted small">Descarga el registro de alertas generadas</p>
-          <button class="btn btn-primary btn-sm" onclick="exportarAlertas()"><i class="bi bi-download me-1"></i>Descargar Alertas</button>
+          <p class="text-muted small mb-3">Descarga el registro de todas las alertas generadas.</p>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="previsualizarAlertas()">
+              <i class="bi bi-eye me-1"></i>Vista previa
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="exportarAlertas()">
+              <i class="bi bi-filetype-csv me-1"></i>Descargar CSV
+            </button>
+            <button class="btn btn-success btn-sm" onclick="exportarAlertasExcel()">
+              <i class="bi bi-file-earmark-excel me-1"></i>Descargar Excel
+            </button>
+          </div>
         </div>
       </div>
     </div>
-    <div class="data-card mt-4">
-      <div class="data-card-header"><h5><i class="bi bi-table me-2"></i>Vista previa</h5></div>
+
+    <div class="data-card">
+      <div class="data-card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+        <h5 class="mb-0"><i class="bi bi-table me-2"></i>Vista previa</h5>
+        <span class="badge bg-secondary small" id="repConteoLabel" hidden></span>
+      </div>
       <div class="data-card-body" id="reportePreview">
-        <p class="text-muted small">Selecciona un reporte para ver la vista previa</p>
+        <div class="text-center text-muted py-4">
+          <i class="bi bi-arrow-up-circle fs-3 d-block mb-2 opacity-50"></i>
+          <span class="small">Configura los filtros y pulsa <strong>Vista previa</strong> para ver los datos aquí.</span>
+        </div>
       </div>
     </div>`;
+
+  // Lanzar previsualización automática al cargar
+  previsualizarReporte();
 }
 
-window.exportarCSV=async function(){
-  let data=await getFacturas();
-  const svc=document.getElementById('repSvc').value;
-  if(svc) data=data.filter(f=>f.servicio===svc);
-  if(data.length===0){ showToast('No hay datos para exportar',{type:'warning'}); return; }
-  let csv='Servicio,Período,Consumo,Unidad,Valor,Fecha Corte,Fecha Pago\n';
+// ─── Helper: datos filtrados ──────────────────────────────────────────────
+async function _getReporteData(){
+  let data = await getFacturas();
+  const svc   = (document.getElementById('repSvc')   || {}).value || '';
+  const desde = (document.getElementById('repDesde') || {}).value || '';
+  const hasta = (document.getElementById('repHasta') || {}).value || '';
+  if(svc)   data = data.filter(f => f.servicio === svc);
+  if(desde) data = data.filter(f => (f.periodo || '') >= desde);
+  if(hasta) data = data.filter(f => (f.periodo || '') <= hasta);
+  data.sort((a,b)=>(a.periodo||'').localeCompare(b.periodo||'')||(a.servicio||'').localeCompare(b.servicio||''));
+  return data;
+}
+
+// ─── Vista previa de facturas ─────────────────────────────────────────────
+window.previsualizarReporte = async function(){
+  const container = document.getElementById('reportePreview');
+  if(!container) return;
+  container.innerHTML = `<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><span class="ms-2 small text-muted">Cargando datos…</span></div>`;
+  const data  = await _getReporteData();
+  const badge = document.getElementById('repConteoLabel');
+  if(data.length === 0){
+    container.innerHTML = `<p class="text-muted small mb-0 text-center py-3"><i class="bi bi-inbox me-1"></i>No se encontraron registros con los filtros seleccionados.</p>`;
+    if(badge){ badge.textContent='0 registros'; badge.hidden=false; }
+    return;
+  }
+  if(badge){ badge.textContent=`${data.length} registro${data.length!==1?'s':''}`; badge.hidden=false; }
+  const totalGasto = data.reduce((s,f)=>s+(Number(f.valor)||0),0);
+  let rows = '';
   data.forEach(f=>{
-    const m=SERVICE_META[f.servicio]||{unit:''};
-    csv+=`${f.servicio},${f.periodo},${f.consumo},${m.unit},${f.valor},${f.fecha_corte||''},${f.fecha_pago||''}\n`;
+    const m = SERVICE_META[f.servicio]||{label:f.servicio,unit:'',emoji:''};
+    rows += `<tr>
+      <td><span class="badge bg-light text-dark border">${escapeHtml(m.emoji)} ${escapeHtml(m.label)}</span></td>
+      <td class="fw-500">${escapeHtml(f.periodo||'—')}</td>
+      <td>${escapeHtml(String(f.consumo??'—'))} <small class="text-muted">${escapeHtml(m.unit)}</small></td>
+      <td class="fw-600 text-success">$${(Number(f.valor)||0).toLocaleString('es-CO')}</td>
+      <td class="text-muted small">${escapeHtml(f.fecha_corte||'—')}</td>
+      <td class="text-muted small">${escapeHtml(f.fecha_pago||'—')}</td>
+    </tr>`;
   });
-  downloadFile('reporte_consumo.csv',csv,'text/csv');
-  showToast('Reporte descargado',{type:'success'});
+  container.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-2" style="font-size:13px">
+        <thead class="table-light">
+          <tr><th>Servicio</th><th>Período</th><th>Consumo</th><th>Valor (COP)</th><th>F. Corte</th><th>F. Pago</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot class="table-light fw-600">
+          <tr>
+            <td colspan="3" class="text-end text-muted small">Total período:</td>
+            <td class="text-success">$${totalGasto.toLocaleString('es-CO')}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <p class="text-muted small mb-0">${data.length} registro${data.length!==1?'s':''} encontrado${data.length!==1?'s':''}. Gasto total: <strong>$${totalGasto.toLocaleString('es-CO')} COP</strong></p>`;
 };
 
-window.exportarAlertas=async function(){
-  const alertas=await DataService.getAlertas();
+// ─── Vista previa de alertas ──────────────────────────────────────────────
+window.previsualizarAlertas = async function(){
+  const container = document.getElementById('reportePreview');
+  if(!container) return;
+  container.innerHTML = `<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><span class="ms-2 small text-muted">Cargando alertas…</span></div>`;
+  const alertas = await DataService.getAlertas();
+  const badge = document.getElementById('repConteoLabel');
+  if(alertas.length === 0){
+    container.innerHTML = `<p class="text-muted small mb-0 text-center py-3"><i class="bi bi-bell-slash me-1"></i>No hay alertas registradas.</p>`;
+    if(badge){ badge.textContent='0 alertas'; badge.hidden=false; }
+    return;
+  }
+  if(badge){ badge.textContent=`${alertas.length} alerta${alertas.length!==1?'s':''}`; badge.hidden=false; }
+  let rows = '';
+  alertas.forEach(a=>{
+    const cls = a.estado==='nueva'?'text-danger fw-600':'text-muted';
+    rows += `<tr>
+      <td>${escapeHtml(a.servicio||'—')}</td>
+      <td>${escapeHtml(a.tipo||'—')}</td>
+      <td>${escapeHtml(a.mensaje||'—')}</td>
+      <td class="text-muted small">${escapeHtml(a.fecha||'—')}</td>
+      <td class="${cls}">${escapeHtml(a.estado||'—')}</td>
+    </tr>`;
+  });
+  container.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-2" style="font-size:13px">
+        <thead class="table-light">
+          <tr><th>Servicio</th><th>Tipo</th><th>Mensaje</th><th>Fecha</th><th>Estado</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="text-muted small mb-0">${alertas.length} alerta${alertas.length!==1?'s':''} en total.</p>`;
+};
+
+// ─── CSV con BOM UTF-8 ────────────────────────────────────────────────────
+window.exportarCSV = async function(){
+  const data = await _getReporteData();
+  if(data.length===0){ showToast('No hay datos para exportar',{type:'warning'}); return; }
+  const esc = v => { const s=String(v??''); return (s.includes(',')||s.includes('"')||s.includes('\n'))?`"${s.replace(/"/g,'""')}"`:s; };
+  let csv = '\uFEFF' + 'Servicio,Período,Consumo,Unidad,Valor (COP),Fecha Corte,Fecha Pago\n';
+  data.forEach(f=>{
+    const m = SERVICE_META[f.servicio]||{label:f.servicio,unit:''};
+    csv += `${esc(m.label)},${esc(f.periodo)},${esc(f.consumo)},${esc(m.unit)},${esc(f.valor)},${esc(f.fecha_corte||'')},${esc(f.fecha_pago||'')}\n`;
+  });
+  downloadFile('reporte_consumo.csv',csv,'text/csv;charset=utf-8;');
+  showToast('CSV descargado correctamente',{type:'success'});
+};
+
+// ─── Excel: 3 hojas (Facturas, Resumen, Info) ────────────────────────────
+window.exportarExcel = async function(){
+  if(typeof XLSX==='undefined'){ showToast('Librería Excel no disponible, intente recargar la página',{type:'danger'}); return; }
+  const data = await _getReporteData();
+  if(data.length===0){ showToast('No hay datos para exportar',{type:'warning'}); return; }
+  const desde = (document.getElementById('repDesde')||{}).value||'';
+  const hasta  = (document.getElementById('repHasta') ||{}).value||'';
+
+  // Hoja 1: Facturas detalladas
+  const ws1data = data.map(f=>{
+    const m=SERVICE_META[f.servicio]||{label:f.servicio,unit:''};
+    return {'Servicio':m.label,'Período':f.periodo||'','Consumo':Number(f.consumo)||0,'Unidad':m.unit,'Valor (COP)':Number(f.valor)||0,'Fecha Corte':f.fecha_corte||'','Fecha Pago':f.fecha_pago||''};
+  });
+  const ws1 = XLSX.utils.json_to_sheet(ws1data);
+  ws1['!cols'] = [{wch:14},{wch:10},{wch:10},{wch:8},{wch:14},{wch:13},{wch:12}];
+
+  // Hoja 2: Resumen por servicio
+  const rm = {};
+  data.forEach(f=>{
+    const m=SERVICE_META[f.servicio]||{label:f.servicio,unit:''};
+    if(!rm[f.servicio]) rm[f.servicio]={Servicio:m.label,Unidad:m.unit,Registros:0,ConsumoTotal:0,GastoTotal:0,ConsumoMin:Infinity,ConsumoMax:-Infinity};
+    const r=rm[f.servicio]; r.Registros++; r.ConsumoTotal+=Number(f.consumo)||0; r.GastoTotal+=Number(f.valor)||0;
+    r.ConsumoMin=Math.min(r.ConsumoMin,Number(f.consumo)||0); r.ConsumoMax=Math.max(r.ConsumoMax,Number(f.consumo)||0);
+  });
+  const ws2data = Object.values(rm).map(r=>({'Servicio':r.Servicio,'Unidad':r.Unidad,'N° Registros':r.Registros,'Consumo Total':+r.ConsumoTotal.toFixed(2),'Consumo Promedio':+(r.ConsumoTotal/r.Registros).toFixed(2),'Consumo Mín':r.ConsumoMin===Infinity?0:r.ConsumoMin,'Consumo Máx':r.ConsumoMax===-Infinity?0:r.ConsumoMax,'Gasto Total (COP)':r.GastoTotal}));
+  const ws2 = XLSX.utils.json_to_sheet(ws2data);
+  ws2['!cols'] = [{wch:12},{wch:8},{wch:13},{wch:14},{wch:16},{wch:13},{wch:13},{wch:18}];
+
+  // Hoja 3: Metadatos
+  const ws3data = [
+    {'Campo':'Generado el','Valor':new Date().toLocaleString('es-CO')},
+    {'Campo':'Filtro servicio','Valor':(document.getElementById('repSvc')||{}).value?(SERVICE_META[(document.getElementById('repSvc')||{}).value]?.label||''):'Todos'},
+    {'Campo':'Desde','Valor':desde||'Sin límite'},
+    {'Campo':'Hasta','Valor':hasta||'Sin límite'},
+    {'Campo':'Total registros','Valor':data.length},
+    {'Campo':'Gasto total','Valor':'$'+data.reduce((s,f)=>s+(Number(f.valor)||0),0).toLocaleString('es-CO')+' COP'}
+  ];
+  const ws3 = XLSX.utils.json_to_sheet(ws3data);
+  ws3['!cols'] = [{wch:18},{wch:30}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Facturas',ws1);
+  XLSX.utils.book_append_sheet(wb,'Resumen por Servicio',ws2);
+  XLSX.utils.book_append_sheet(wb,'Información del Reporte',ws3);
+  XLSX.writeFile(wb,`reporte_consumo_${desde||'inicio'}_${hasta||'fin'}.xlsx`);
+  showToast('Excel descargado correctamente',{type:'success'});
+};
+
+// ─── CSV de alertas ───────────────────────────────────────────────────────
+window.exportarAlertas = async function(){
+  const alertas = await DataService.getAlertas();
   if(alertas.length===0){ showToast('No hay alertas para exportar',{type:'warning'}); return; }
-  let csv='Servicio,Tipo,Mensaje,Fecha,Estado\n';
-  alertas.forEach(a=>{ csv+=`${a.servicio},${a.tipo},"${a.mensaje}",${a.fecha||''},${a.estado}\n`; });
-  downloadFile('reporte_alertas.csv',csv,'text/csv');
-  showToast('Reporte descargado',{type:'success'});
+  const esc = v => { const s=String(v??''); return (s.includes(',')||s.includes('"'))?`"${s.replace(/"/g,'""')}"`:s; };
+  let csv = '\uFEFF' + 'Servicio,Tipo,Mensaje,Fecha,Estado\n';
+  alertas.forEach(a=>{ csv+=`${esc(a.servicio)},${esc(a.tipo)},${esc(a.mensaje)},${esc(a.fecha||'')},${esc(a.estado)}\n`; });
+  downloadFile('reporte_alertas.csv',csv,'text/csv;charset=utf-8;');
+  showToast('Alertas descargadas',{type:'success'});
+};
+
+// ─── Excel de alertas ─────────────────────────────────────────────────────
+window.exportarAlertasExcel = async function(){
+  if(typeof XLSX==='undefined'){ showToast('Librería Excel no disponible',{type:'danger'}); return; }
+  const alertas = await DataService.getAlertas();
+  if(alertas.length===0){ showToast('No hay alertas para exportar',{type:'warning'}); return; }
+  const wsData = alertas.map(a=>({'Servicio':a.servicio||'','Tipo':a.tipo||'','Mensaje':a.mensaje||'','Fecha':a.fecha||'','Estado':a.estado||''}));
+  const ws = XLSX.utils.json_to_sheet(wsData);
+  ws['!cols']=[{wch:12},{wch:14},{wch:45},{wch:13},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Alertas',ws);
+  XLSX.writeFile(wb,'reporte_alertas.xlsx');
+  showToast('Excel de alertas descargado',{type:'success'});
 };
 
 function downloadFile(name,content,type){
