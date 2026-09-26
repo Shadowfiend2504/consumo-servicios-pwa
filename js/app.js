@@ -1519,9 +1519,9 @@ window.exportarExcel = async function(){
   ws3['!cols'] = [{wch:18},{wch:30}];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,'Facturas',ws1);
-  XLSX.utils.book_append_sheet(wb,'Resumen por Servicio',ws2);
-  XLSX.utils.book_append_sheet(wb,'Información del Reporte',ws3);
+  XLSX.utils.book_append_sheet(wb,ws1,'Facturas');
+  XLSX.utils.book_append_sheet(wb,ws2,'Resumen por Servicio');
+  XLSX.utils.book_append_sheet(wb,ws3,'Informacion del Reporte');
   XLSX.writeFile(wb,`reporte_consumo_${desde||'inicio'}_${hasta||'fin'}.xlsx`);
   showToast('Excel descargado correctamente',{type:'success'});
 };
@@ -1546,7 +1546,7 @@ window.exportarAlertasExcel = async function(){
   const ws = XLSX.utils.json_to_sheet(wsData);
   ws['!cols']=[{wch:12},{wch:14},{wch:45},{wch:13},{wch:10}];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,'Alertas',ws);
+  XLSX.utils.book_append_sheet(wb,ws,'Alertas');
   XLSX.writeFile(wb,'reporte_alertas.xlsx');
   showToast('Excel de alertas descargado',{type:'success'});
 };
