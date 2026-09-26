@@ -1,248 +1,209 @@
-# Consumo de Servicios PWA
+# 🏠 Control de Consumo del Hogar — PWA
 
-Una **Progressive Web App (PWA)** moderna para la gestión de autenticación y consumo de servicios, construida con HTML5, CSS3, JavaScript vanilla y Firebase.
+Una **Progressive Web App (PWA)** para monitorear y gestionar el consumo de servicios públicos del hogar (agua, energía, gas e internet). Construida con HTML5, CSS3, JavaScript vanilla, Chart.js y Firebase.
 
-## 🚀 Características
+🔗 **Demo en vivo**: [https://shadowfiend2504.github.io/consumo-servicios-pwa/](https://shadowfiend2504.github.io/consumo-servicios-pwa/)
 
-- ✅ **Autenticación con Firebase** - Login y registro seguro de usuarios
-- ✅ **Progressive Web App** - Funciona offline y se instala como app nativa
-- ✅ **Base de datos Firestore** - Almacenamiento en tiempo real
-- ✅ **Diseño Responsivo** - Optimizado para mobile, tablet y desktop
-- ✅ **Dashboard Interactivo** - Panel de control para usuarios registrados
-- ✅ **Gestión de datos JSON** - Soporte para importar/exportar datos
+---
+
+## ✨ Características principales
+
+### 🔐 Autenticación
+- Login y registro seguro con **Firebase Authentication**
+- Recuperación de contraseña por correo electrónico
+- Sesión persistente y protección de rutas
+
+### 📊 Dashboard (Inicio)
+- Tarjetas de resumen con el último consumo y valor por servicio, con indicador de tendencia (↑/↓/→)
+- **6 gráficas interactivas** con Chart.js:
+  - Consumo por servicio (barras)
+  - Costo por servicio (barras)
+  - Distribución del gasto (pastel)
+  - **Valores Atípicos** (detección automática por IQR de Tukey)
+  - Consumo vs. Valor por servicio (dispersión)
+  - Meses de mayor y menor consumo
+  - Gráficas individuales de historial por servicio
+
+### 🧾 Facturas y Lecturas
+- Registro, edición y eliminación de facturas por servicio (Agua, Energía, Gas, Internet)
+- Campos: período, consumo, valor, fecha de corte y fecha de pago
+- Tabla paginada con filtros por servicio
+- Botón de acceso rápido para registrar nueva factura
+
+### 📈 Análisis de Consumo
+Tres bloques de análisis con **filtros de período independientes** (`1 Mes`, `3 Meses`, `6 Meses`, `1 Año`, `Todo`):
+
+1. **Consolidado de Gasto Monetario**
+   - Gráfica de barras apiladas por servicio + línea de total
+   - Vista configurable: Mensual / Trimestral / Semestral / Anual
+   - Tarjeta KPI con gasto total, promedio del período y desglose porcentual
+
+2. **Comparativo Histórico de Consumo**
+   - Curvas de consumo físico (m³, kWh, Mbps) por servicio en el período seleccionado
+
+3. **Consolidado por Servicio** (tarjetas individuales)
+   - Mini gráfica de tendencia por servicio
+   - KPIs: Promedio, Mín/Máx, Gasto total
+   - Insignia de tendencia (Creciente / Decreciente / Estable)
+   - Tabla de variación período a período (abs. y %)
+   - Filtro individual por tarjeta + filtro global para sincronizar todas
+
+### 🔔 Alertas y Seguimiento
+- Detección automática de sobreconsumo y valores atípicos
+- Registro de alertas con estado (nueva / revisada)
+- Badge de alertas sin revisar visible en el menú
+
+### 📑 Reportes
+- **Filtros**: por servicio y rango de fechas (desde/hasta por mes)
+- **Vista previa** en tiempo real con tabla formateada y total del período
+- **Descargar CSV**: con BOM UTF-8 (tildes y ñ correctas en Excel), campos correctamente entrecomillados
+- **Descargar Excel (.xlsx)** con 3 hojas:
+  - 📄 *Facturas* — Detalle completo filtrado
+  - 📊 *Resumen por Servicio* — Estadísticas: total, promedio, mín, máx
+  - ℹ️ *Información del Reporte* — Fecha de generación, filtros aplicados, totales
+- Exportación de alertas en CSV y Excel
+
+### 📱 PWA — Progressive Web App
+- Instalable en Android, iOS y escritorio (Chrome/Edge/Safari)
+- Service Worker con estrategia **network-first para HTML** y **cache-first para assets**
+- Navegación in-app en modo standalone (sin pestañas externas)
+- Botón "Instalar aplicación" en el header cuando el dispositivo lo soporta
+
+---
 
 ## 📁 Estructura del Proyecto
 
 ```
 consumo-servicios-pwa/
-├── index.html              # Página de inicio
-├── registrar.html          # Página de registro de usuarios
-├── registro.html           # Página alternativa de registro
-├── dashboard.html          # Panel de control (protegido)
+├── index.html              # App principal (SPA: login + dashboard)
+├── terminos.html           # Términos y condiciones (in-app navigation)
+├── registro.html           # Flujo de registro de usuarios
+├── registrar.html          # Página alternativa de registro
+├── reset-password.html     # Pantalla de nueva contraseña (Firebase oobCode)
+├── manifest.json           # Manifest PWA
+├── sw.js                   # Service Worker (cache v13, network-first HTML)
 ├── css/
-│   └── estilos.css        # Estilos principales
+│   └── estilos.css         # Estilos globales y componentes UI
 ├── js/
-│   ├── app.js             # Lógica principal de la aplicación
-│   ├── auth.js            # Funciones de autenticación
-│   ├── firebase-config.js # Configuración de Firebase
-│   └── firebase-data.js   # Operaciones de base de datos
+│   ├── app.js              # Lógica principal: secciones, gráficas, reportes
+│   ├── auth.js             # Autenticación Firebase (login, registro, logout)
+│   ├── firebase-config.js  # Configuración Firebase (generado por CI/CD)
+│   ├── firebase-data.js    # DataService: Firestore + localStorage fallback
+│   ├── recover-password.js # Flujo de recuperación de contraseña
+│   └── reset-password.js   # Confirmación de nueva contraseña (oobCode)
 ├── data/
-│   └── datos.json         # Datos de ejemplo
-└── README.md              # Este archivo
+│   └── datos.json          # Datos de ejemplo (fallback offline)
+├── icons/                  # Iconos PWA (192, 512, maskable)
+└── README.md
 ```
 
-## 🛠️ Tecnologías Utilizadas
+---
 
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Backend**: Firebase (Authentication + Firestore)
-- **PWA**: Service Workers, Web App Manifest
-- **Hosting**: GitHub Pages
+## 🛠️ Tecnologías
 
-## 📋 Requisitos
+| Categoría | Tecnología |
+|---|---|
+| Frontend | HTML5, CSS3, JavaScript ES6+ |
+| Gráficas | [Chart.js 4.4](https://www.chartjs.org/) |
+| Excel export | [SheetJS (xlsx 0.18)](https://sheetjs.com/) |
+| UI | [Bootstrap 5.3](https://getbootstrap.com/) + Bootstrap Icons |
+| Backend | Firebase Authentication + Firestore |
+| PWA | Service Workers, Web App Manifest |
+| CI/CD | GitHub Actions → GitHub Pages |
 
-- Navegador moderno con soporte para ES6+
-- Conexión a Internet (primer acceso)
-- Proyecto Firebase activo
+---
 
-## 🚀 Instalación y Configuración
+## 🚀 Instalación y configuración
 
-### 1. Clonar el Repositorio
+### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/consumo-servicios-pwa.git
+git clone https://github.com/Shadowfiend2504/consumo-servicios-pwa.git
 cd consumo-servicios-pwa
 ```
 
 ### 2. Configurar Firebase
 
-1. Crea el secreto `FIREBASE_CONFIG_JSON` en GitHub Actions con el JSON completo de tu app Firebase.
-2. El workflow genera `js/firebase-config.js` automáticamente durante el deploy.
+1. Crea un proyecto en [Firebase Console](https://console.firebase.google.com).
+2. Habilita **Authentication → Email/Password**.
+3. Crea una base de datos **Firestore** en modo producción.
+4. En GitHub → **Settings → Secrets and variables → Actions**, crea el secreto:
 
-Obtén estas credenciales desde [Firebase Console](https://console.firebase.google.com)
+```
+FIREBASE_CONFIG_JSON = {"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}
+```
 
-### 3. Servir Localmente
+El workflow CI/CD genera `js/firebase-config.js` automáticamente en cada deploy.
 
-Usa un servidor local (recomendado para PWA):
+### 3. Servir localmente
 
 ```bash
-# Con Python 3
+# Python 3
 python -m http.server 8000
 
-# Con Node.js + http-server
+# Node.js
 npx http-server
 
-# Con VS Code Live Server
-# Haz clic derecho en index.html → "Open with Live Server"
+# VS Code → clic derecho en index.html → "Open with Live Server"
 ```
 
-Accede a `http://localhost:8000`
-
-## 🔐 Credenciales y Seguridad
-
-⚠️ **IMPORTANTE**: Las credenciales de Firebase están protegidas mediante:
-
-- `.gitignore` - `firebase-config.js` no se sube a GitHub
-- **GitHub Secrets** - Las credenciales se inyectan en el CI/CD
-- **GitHub Actions** - El archivo se genera automáticamente en cada deploy
-
-**Nunca** commits credenciales reales. Usa `firebase-config.example.js` como template.
-
-### Recuperación de contraseña real (Firebase)
-
-Para que el botón "Olvidé mi contraseña" envíe correos reales:
-
-1. En Firebase Console ve a `Authentication` → `Sign-in method` y habilita `Email/Password`.
-2. En `Authentication` → `Settings` → `Authorized domains`, agrega tu dominio de despliegue y `localhost` para pruebas.
-3. Verifica que `js/firebase-config.js` tenga credenciales válidas (no placeholders).
-4. Opcional: personaliza la plantilla en `Authentication` → `Templates` → `Password reset`.
-
-### Flujo de nueva contraseña en la app
-
-La app ahora incluye una pantalla dedicada para guardar la nueva contraseña:
-
-- `reset-password.html`
-- `js/reset-password.js`
-
-Este flujo valida el `oobCode`, guarda la nueva contraseña en Firebase con `confirmPasswordReset` y luego redirige al login.
-
-Si en tu proyecto Firebase tienes habilitada una URL personalizada para el correo de recuperación, apunta al endpoint:
-
-- `/reset-password.html`
-
-Si Firebase no está configurado, la app mostrará un error y no simulará envíos por `localStorage`.
-
-En GitHub Pages solo necesitas un secreto:
-
-```json
-{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"...","measurementId":"..."}
-```
-
-## 📚 Flujo de Usuarios
-
-```
-┌─────────────┐
-│   index.html │ ← Página de inicio
-└──────┬──────┘
-       │
-       ├─→ [Registrar] → registrar.html
-       │                 ↓
-       │            Firebase Auth
-       │                 ↓
-       └─→ [Login] ─────────────→ dashboard.html
-                                  (Protegido)
-```
-
-## 🔧 Scripts Principales
-
-### `app.js`
-Lógica principal y coordinación de la aplicación.
-
-### `auth.js`
-- `registerUser()` - Registro de nuevos usuarios
-- `loginUser()` - Autenticación
-- `logoutUser()` - Cerrar sesión
-- `checkAuth()` - Verificar estado de autenticación
-
-### `firebase-data.js`
-- `saveUserData()` - Guardar datos del usuario
-- `getUserData()` - Recuperar datos del usuario
-- `updateUserData()` - Actualizar información
-
-## 🌐 Despliegue en GitHub Pages
-
-El proyecto se despliega automáticamente con cada push a `main`:
-
-```bash
-git add .
-git commit -m "Actualizar aplicación"
-git push origin main
-```
-
-El workflow de GitHub Actions:
-1. Genera `firebase-config.js` desde GitHub Secrets
-2. Despliega a GitHub Pages
-3. Tu PWA estará en `https://tu-usuario.github.io/consumo-servicios-pwa`
-
-## 📱 Instalar como PWA
-
-Desde tu navegador:
-
-1. **Chrome/Edge**: Busca el ícono de instalación en la barra de direcciones
-2. **Safari iOS**: Toca Compartir → Agregar a Pantalla de Inicio
-3. **Firefox Android**: Presiona el ícono de menú → Instalar
-
-## 📦 PWA (Instalable)
-
-Se ha agregado soporte PWA para que la aplicación pueda instalarse y funcionar en modo offline parcial mediante un Service Worker.
-
-- Archivos añadidos / modificados:
-       - `manifest.json` — metadatos de la app (nombre, icons, `start_url`, `scope`).
-       - `sw.js` — Service Worker simple que cachea recursos para un modo offline básico.
-       - `icons/` — iconos SVG/PNG utilizados por el `manifest`.
-       - `index.html`, `registro.html`, `registrar.html` — ahora incluyen `link rel="manifest"`.
-       - `js/app.js` — registra el Service Worker y maneja el evento `beforeinstallprompt` mostrando un botón `⬇ Instalar aplicación` en el header cuando procede.
-
-- Cómo probar localmente:
-       - Sirve el proyecto en `localhost` (Chrome permite PWA desde `http://localhost`).
-              ```bash
-              cd consumo-servicios-pwa
-              python -m http.server 8000
-              # o usa Live Server en VS Code
-              ```
-       - Abre `http://localhost:8000` y espera el prompt de instalación o haz clic en el botón "⬇ Instalar aplicación" si aparece en el header.
-
-- Nota sobre HTTPS / Producción:
-       - La instalación PWA en producción requiere HTTPS. El proyecto está listo para desplegar en GitHub Pages (HTTPS):
-              https://shadowfiend2504.github.io/consumo-servicios-pwa/
-
-Si quieres, puedo generar iconos PNG reales y actualizar el `manifest.json` para apuntar a ellos.
-
-## 🐛 Solución de Problemas
-
-### Firebase no inicializa
-- Verifica que `firebase-config.js` existe y tiene valores válidos
-- Abre la consola del navegador (F12) para ver errores
-
-### PWA offline no funciona
-- Asegúrate que el navegador soporta Service Workers
-- Abre en localhost (no en file://)
-
-### GitHub Pages no carga
-- Ve a Settings → Pages → Verifica que esté habilitado
-- Espera 1-2 minutos después del push
-
-## 📝 Cambios Recomendados
-
-Antes de usar en producción:
-
-- [ ] Reemplaza los datos de ejemplo en `datos.json`
-- [ ] Personaliza `estilos.css` con tu branding
-- [ ] Agrega reglas de seguridad en Firestore
-- [ ] Habilita HTTPS (GitHub Pages lo hace automáticamente)
-- [ ] Añade Privacy Policy y Terms of Service
-
-## 📄 Licencia
-
-Este proyecto está bajo licencia MIT. Consulta el archivo LICENSE para más detalles.
-
-## 👤 Autor
-
-Desarrollado como una Progressive Web App moderna.
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Haz fork del proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📞 Soporte
-
-¿Preguntas o problemas? Abre un issue en GitHub.
+Navega a `http://localhost:8000`.
 
 ---
 
-**Última actualización**: 3 de abril de 2026
+## 🔐 Seguridad de credenciales
+
+- `firebase-config.js` está en `.gitignore` y **nunca** se sube al repositorio.
+- Las credenciales reales se inyectan en tiempo de deploy desde **GitHub Secrets**.
+- Usa `firebase-config.example.js` como plantilla para desarrollo local.
+
+---
+
+## 🌐 Despliegue continuo
+
+Cada push a `main` dispara automáticamente GitHub Actions:
+
+1. Genera `js/firebase-config.js` desde el secreto.
+2. Copia los archivos a `dist/`.
+3. Despliega en **GitHub Pages** (~60–90 segundos).
+
+```bash
+git add .
+git commit -m "feat: descripción del cambio"
+git push origin main
+```
+
+---
+
+## 📱 Instalar como PWA
+
+| Plataforma | Pasos |
+|---|---|
+| **Chrome / Edge (Desktop)** | Ícono de instalación en la barra de direcciones |
+| **Chrome (Android)** | Menú ⋮ → Agregar a pantalla de inicio |
+| **Safari (iOS)** | Compartir 〒 → Agregar a pantalla de inicio |
+| **Firefox (Android)** | Menú → Instalar |
+
+La app también muestra un botón **⬇ Instalar aplicación** en el header cuando el navegador lo soporta.
+
+---
+
+## 🐛 Solución de problemas
+
+| Problema | Solución |
+|---|---|
+| Firebase no inicializa | Verifica que `firebase-config.js` exista con valores válidos. Abre la consola (F12). |
+| PWA no se instala | Necesita HTTPS o `localhost`. No funciona desde `file://`. |
+| GitHub Pages no carga | Settings → Pages → verifica que esté habilitado. Espera 1–2 min. |
+| Caché desactualizado | En el navegador: `Ctrl+Shift+R`. En PWA: desinstala y reinstala. |
+| CSV con caracteres raros | Abre Excel → Datos → Importar → selecciona UTF-8. O usa el botón **Descargar Excel**. |
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
+
+---
+
+**Última actualización**: 25 de septiembre de 2026
