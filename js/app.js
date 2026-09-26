@@ -727,6 +727,7 @@ async function loadAnalisis(c){
         <div class="d-flex align-items-center gap-2">
           <span class="small text-muted fw-500 d-none d-sm-inline">Período:</span>
           <div class="btn-group btn-group-sm" role="group" id="historicoRangoGroup">
+            <button type="button" class="btn btn-outline-primary" data-rango="1m">1 Mes</button>
             <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
             <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
             <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
@@ -751,6 +752,7 @@ async function loadAnalisis(c){
       <div class="d-flex align-items-center gap-2">
         <span class="small text-muted fw-500">Filtrar todos:</span>
         <div class="btn-group btn-group-sm" role="group" id="globalSvcRangoGroup">
+          <button type="button" class="btn btn-outline-primary" data-rango="1m">1 Mes</button>
           <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
           <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
           <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
@@ -771,6 +773,7 @@ async function loadAnalisis(c){
             <span class="trend-badge stable" id="svcTrendBadge-${svc}">Estable</span>
           </div>
           <div class="btn-group btn-group-sm svc-individual-filter-group" role="group" data-svc="${svc}">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="1m">1m</button>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="3m">3m</button>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="6m">6m</button>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="12m">1a</button>
