@@ -1478,77 +1478,100 @@ window.exportarCSV = async function(){
   showToast('CSV descargado correctamente',{type:'success'});
 };
 
-// ─── Excel: 3 hojas (Facturas, Resumen, Info) ────────────────────────────
+// ─── Excel: 3 hojas usando aoa_to_sheet (evita problemas con claves especiales)
 window.exportarExcel = async function(){
-  if(typeof XLSX==='undefined'){ showToast('Librería Excel no disponible, intente recargar la página',{type:'danger'}); return; }
-  const data = await _getReporteData();
-  if(data.length===0){ showToast('No hay datos para exportar',{type:'warning'}); return; }
-  const desde = (document.getElementById('repDesde')||{}).value||'';
-  const hasta  = (document.getElementById('repHasta') ||{}).value||'';
+  if(typeof XLSX==='undefined'){ showToast('Librería Excel no disponible, recarga la página',{type:'danger'}); return; }
+  try {
+    const data = await _getReporteData();
+    if(data.length===0){ showToast('No hay datos para exportar',{type:'warning'}); return; }
+    const desde = String((document.getElementById('repDesde')||{}).value||'');
+    const hasta  = String((document.getElementById('repHasta') ||{}).value||'');
+    const svcVal = String((document.getElementById('repSvc')   ||{}).value||'');
 
-  // Hoja 1: Facturas detalladas
-  const ws1data = data.map(f=>{
-    const m=SERVICE_META[f.servicio]||{label:f.servicio,unit:''};
-    return {'Servicio':m.label,'Período':f.periodo||'','Consumo':Number(f.consumo)||0,'Unidad':m.unit,'Valor (COP)':Number(f.valor)||0,'Fecha Corte':f.fecha_corte||'','Fecha Pago':f.fecha_pago||''};
-  });
-  const ws1 = XLSX.utils.json_to_sheet(ws1data);
-  ws1['!cols'] = [{wch:14},{wch:10},{wch:10},{wch:8},{wch:14},{wch:13},{wch:12}];
+    // ── Hoja 1: Detalle de facturas (array de arrays) ──
+    const h1 = ['Servicio','Periodo','Consumo','Unidad','Valor COP','Fecha Corte','Fecha Pago'];
+    const rows1 = data.map(f => {
+      const m = SERVICE_META[f.servicio]||{label:String(f.servicio),unit:''};
+      return [
+        String(m.label),
+        String(f.periodo||''),
+        Number(f.consumo)||0,
+        String(m.unit),
+        Number(f.valor)||0,
+        String(f.fecha_corte||''),
+        String(f.fecha_pago||'')
+      ];
+    });
+    const ws1 = XLSX.utils.aoa_to_sheet([h1, ...rows1]);
+    ws1['!cols'] = [{wch:14},{wch:10},{wch:10},{wch:8},{wch:14},{wch:13},{wch:12}];
 
-  // Hoja 2: Resumen por servicio
-  const rm = {};
-  data.forEach(f=>{
-    const m=SERVICE_META[f.servicio]||{label:f.servicio,unit:''};
-    if(!rm[f.servicio]) rm[f.servicio]={Servicio:m.label,Unidad:m.unit,Registros:0,ConsumoTotal:0,GastoTotal:0,ConsumoMin:Infinity,ConsumoMax:-Infinity};
-    const r=rm[f.servicio]; r.Registros++; r.ConsumoTotal+=Number(f.consumo)||0; r.GastoTotal+=Number(f.valor)||0;
-    r.ConsumoMin=Math.min(r.ConsumoMin,Number(f.consumo)||0); r.ConsumoMax=Math.max(r.ConsumoMax,Number(f.consumo)||0);
-  });
-  const ws2data = Object.values(rm).map(r=>({'Servicio':r.Servicio,'Unidad':r.Unidad,'N° Registros':r.Registros,'Consumo Total':+r.ConsumoTotal.toFixed(2),'Consumo Promedio':+(r.ConsumoTotal/r.Registros).toFixed(2),'Consumo Mín':r.ConsumoMin===Infinity?0:r.ConsumoMin,'Consumo Máx':r.ConsumoMax===-Infinity?0:r.ConsumoMax,'Gasto Total (COP)':r.GastoTotal}));
-  const ws2 = XLSX.utils.json_to_sheet(ws2data);
-  ws2['!cols'] = [{wch:12},{wch:8},{wch:13},{wch:14},{wch:16},{wch:13},{wch:13},{wch:18}];
+    // ── Hoja 2: Resumen estadístico por servicio ──
+    const rm = {};
+    data.forEach(f => {
+      const m = SERVICE_META[f.servicio]||{label:String(f.servicio),unit:''};
+      if(!rm[f.servicio]) rm[f.servicio] = { label:m.label, unit:m.unit, n:0, ct:0, gt:0, mn:Infinity, mx:-Infinity };
+      const r = rm[f.servicio];
+      const c = Number(f.consumo)||0, v = Number(f.valor)||0;
+      r.n++; r.ct+=c; r.gt+=v; r.mn=Math.min(r.mn,c); r.mx=Math.max(r.mx,c);
+    });
+    const h2 = ['Servicio','Unidad','Registros','Consumo Total','Consumo Prom.','Consumo Min','Consumo Max','Gasto Total COP'];
+    const rows2 = Object.values(rm).map(r => [
+      String(r.label), String(r.unit), r.n,
+      +r.ct.toFixed(2), +(r.ct/r.n).toFixed(2),
+      r.mn===Infinity?0:r.mn, r.mx===-Infinity?0:r.mx, r.gt
+    ]);
+    const ws2 = XLSX.utils.aoa_to_sheet([h2, ...rows2]);
+    ws2['!cols'] = [{wch:12},{wch:8},{wch:11},{wch:14},{wch:14},{wch:12},{wch:12},{wch:18}];
 
-  // Hoja 3: Metadatos
-  const ws3data = [
-    {'Campo':'Generado el','Valor':new Date().toLocaleString('es-CO')},
-    {'Campo':'Filtro servicio','Valor':(document.getElementById('repSvc')||{}).value?(SERVICE_META[(document.getElementById('repSvc')||{}).value]?.label||''):'Todos'},
-    {'Campo':'Desde','Valor':desde||'Sin límite'},
-    {'Campo':'Hasta','Valor':hasta||'Sin límite'},
-    {'Campo':'Total registros','Valor':data.length},
-    {'Campo':'Gasto total','Valor':'$'+data.reduce((s,f)=>s+(Number(f.valor)||0),0).toLocaleString('es-CO')+' COP'}
-  ];
-  const ws3 = XLSX.utils.json_to_sheet(ws3data);
-  ws3['!cols'] = [{wch:18},{wch:30}];
+    // ── Hoja 3: Metadatos del reporte ──
+    const totalGasto = data.reduce((s,f)=>s+(Number(f.valor)||0),0);
+    const svcLabel = svcVal ? String(SERVICE_META[svcVal]?.label||svcVal) : 'Todos';
+    const ws3 = XLSX.utils.aoa_to_sheet([
+      ['Campo','Valor'],
+      ['Generado el', String(new Date().toLocaleString('es-CO'))],
+      ['Servicio filtrado', svcLabel],
+      ['Desde', desde||'Sin limite'],
+      ['Hasta', hasta||'Sin limite'],
+      ['Total registros', data.length],
+      ['Gasto total COP', totalGasto]
+    ]);
+    ws3['!cols'] = [{wch:20},{wch:30}];
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws1,'Facturas');
-  XLSX.utils.book_append_sheet(wb,ws2,'Resumen por Servicio');
-  XLSX.utils.book_append_sheet(wb,ws3,'Informacion del Reporte');
-  XLSX.writeFile(wb,`reporte_consumo_${desde||'inicio'}_${hasta||'fin'}.xlsx`);
-  showToast('Excel descargado correctamente',{type:'success'});
-};
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, 'Facturas');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+    XLSX.utils.book_append_sheet(wb, ws3, 'Informacion');
 
-// ─── CSV de alertas ───────────────────────────────────────────────────────
-window.exportarAlertas = async function(){
-  const alertas = await DataService.getAlertas();
-  if(alertas.length===0){ showToast('No hay alertas para exportar',{type:'warning'}); return; }
-  const esc = v => { const s=String(v??''); return (s.includes(',')||s.includes('"'))?`"${s.replace(/"/g,'""')}"`:s; };
-  let csv = '\uFEFF' + 'Servicio,Tipo,Mensaje,Fecha,Estado\n';
-  alertas.forEach(a=>{ csv+=`${esc(a.servicio)},${esc(a.tipo)},${esc(a.mensaje)},${esc(a.fecha||'')},${esc(a.estado)}\n`; });
-  downloadFile('reporte_alertas.csv',csv,'text/csv;charset=utf-8;');
-  showToast('Alertas descargadas',{type:'success'});
+    const fname = 'reporte_consumo' + (desde?'_'+desde:'') + (hasta?'_'+hasta:'') + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    showToast('Excel descargado correctamente',{type:'success'});
+  } catch(err) {
+    console.error('exportarExcel error:', err);
+    showToast('Error al generar Excel: ' + String(err.message||err),{type:'danger'});
+  }
 };
 
 // ─── Excel de alertas ─────────────────────────────────────────────────────
 window.exportarAlertasExcel = async function(){
   if(typeof XLSX==='undefined'){ showToast('Librería Excel no disponible',{type:'danger'}); return; }
-  const alertas = await DataService.getAlertas();
-  if(alertas.length===0){ showToast('No hay alertas para exportar',{type:'warning'}); return; }
-  const wsData = alertas.map(a=>({'Servicio':a.servicio||'','Tipo':a.tipo||'','Mensaje':a.mensaje||'','Fecha':a.fecha||'','Estado':a.estado||''}));
-  const ws = XLSX.utils.json_to_sheet(wsData);
-  ws['!cols']=[{wch:12},{wch:14},{wch:45},{wch:13},{wch:10}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Alertas');
-  XLSX.writeFile(wb,'reporte_alertas.xlsx');
-  showToast('Excel de alertas descargado',{type:'success'});
+  try {
+    const alertas = await DataService.getAlertas();
+    if(alertas.length===0){ showToast('No hay alertas para exportar',{type:'warning'}); return; }
+    const header = ['Servicio','Tipo','Mensaje','Fecha','Estado'];
+    const rows = alertas.map(a => [
+      String(a.servicio||''), String(a.tipo||''), String(a.mensaje||''),
+      String(a.fecha||''), String(a.estado||'')
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [{wch:12},{wch:14},{wch:45},{wch:13},{wch:10}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Alertas');
+    XLSX.writeFile(wb, 'reporte_alertas.xlsx');
+    showToast('Excel de alertas descargado',{type:'success'});
+  } catch(err) {
+    console.error('exportarAlertasExcel error:', err);
+    showToast('Error al generar Excel: ' + String(err.message||err),{type:'danger'});
+  }
 };
 
 function downloadFile(name,content,type){
