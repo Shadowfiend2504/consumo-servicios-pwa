@@ -1,4 +1,4 @@
-const CACHE_NAME = 'consumo-pwa-v8';
+const CACHE_NAME = 'consumo-pwa-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -34,6 +34,24 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET') return;
+
+  // Para navegación y documentos HTML: Network-first
+  if (event.request.mode === 'navigate' || event.request.destination === 'document' || event.request.url.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(resp => {
+          if (resp && resp.status === 200) {
+            const copy = resp.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Para otros assets estáticos: Cache-first con actualización de fondo
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request).then(resp => {
       if(!resp || resp.status !== 200 || resp.type !== 'basic') return resp;

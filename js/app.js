@@ -16,6 +16,15 @@ let dashOutlierChartInstance = null;
 let dashScatterChartInstance = null;
 let dashMonthsChartInstance = null;
 const dashServiceChartInstances = {};
+let analisisChartInstance = null;
+let analisisGastoChartInstance = null;
+const analisisServiceChartInstances = {};
+
+function safeDestroyChart(instance){
+  if(instance && typeof instance.destroy === 'function'){
+    try { instance.destroy(); } catch(e){}
+  }
+}
 
 function escapeHtml(value){
   return String(value ?? '')
@@ -634,73 +643,512 @@ window.eliminarFactura=async function(id){
 
 // ============ ANÁLISIS ============
 async function loadAnalisis(c){
-  const facturas=await getFacturas();
-  if(facturas.length<1){
-    c.innerHTML=`<div class="empty-state"><i class="bi bi-graph-up-arrow d-block"></i><h5>Sin datos</h5><p>Registra facturas para ver el análisis</p></div>`;
+  const facturas = await getFacturas();
+  if(!facturas || facturas.length < 1){
+    c.innerHTML = `<div class="empty-state"><i class="bi bi-graph-up-arrow d-block"></i><h5>Sin datos</h5><p>Registra facturas para ver el análisis</p></div>`;
     return;
   }
 
-  // Group by service
-  const porSvc={};
-  facturas.forEach(f=>{ if(!porSvc[f.servicio]) porSvc[f.servicio]=[]; porSvc[f.servicio].push(f); });
-  Object.values(porSvc).forEach(arr=>arr.sort((a,b)=>(a.periodo||'').localeCompare(b.periodo||'')));
+  // Pre-procesar servicios y períodos
+  const porSvc = {};
+  facturas.forEach(f => {
+    if(!porSvc[f.servicio]) porSvc[f.servicio] = [];
+    porSvc[f.servicio].push(f);
+  });
+  Object.values(porSvc).forEach(arr => arr.sort((a,b) => (a.periodo||'').localeCompare(b.periodo||'')));
 
-  let statsHtml='<div class="gap-grid gap-grid-2 mb-4">';
-  Object.keys(porSvc).forEach(svc=>{
-    const m=SERVICE_META[svc]||SERVICE_META.agua;
-    const arr=porSvc[svc];
-    const consumos=arr.map(f=>f.consumo);
-    const avg=(consumos.reduce((s,x)=>s+x,0)/consumos.length).toFixed(1);
-    const min=Math.min(...consumos), max=Math.max(...consumos);
-    const totalCost=arr.reduce((s,f)=>s+f.valor,0);
-    let trend='stable',trendLabel='Estable',trendCls='stable';
-    if(consumos.length>=2){
-      const last=consumos[consumos.length-1], prevAvg=consumos.slice(0,-1).reduce((s,x)=>s+x,0)/(consumos.length-1);
-      const pct=prevAvg>0?((last-prevAvg)/prevAvg*100):0;
-      if(pct>5){ trend='up'; trendLabel='Creciente'; trendCls='up'; }
-      else if(pct<-5){ trend='down'; trendLabel='Decreciente'; trendCls='down'; }
-    }
-    // Variation table
-    let varRows='';
-    for(let i=1;i<arr.length;i++){
-      const prev=arr[i-1], cur=arr[i];
-      const abs=(cur.consumo-prev.consumo).toFixed(1);
-      const pct=prev.consumo>0?((cur.consumo-prev.consumo)/prev.consumo*100).toFixed(1):'—';
-      const cls=pct>0?'trend-up':pct<0?'trend-down':'trend-stable';
-      varRows+=`<tr><td>${escapeHtml(cur.periodo)}</td><td>${cur.consumo}</td><td class="${cls}">${abs>0?'+':''}${abs}</td><td class="${cls}">${pct}%</td></tr>`;
-    }
+  const allPeriodos = [...new Set(facturas.map(f => f.periodo))].sort();
+  const colors = { agua: '#0ea5e9', energia: '#f59e0b', gas: '#ef4444', internet: '#10b981' };
 
-    statsHtml+=`<div class="data-card">
-      <div class="data-card-header"><h5><i class="bi ${m.icon} me-2" style="color:var(--color-${m.cls})"></i>${m.label}</h5><span class="trend-badge ${trendCls}">${trendLabel}</span></div>
-      <div class="data-card-body">
-        <div class="d-flex gap-3 mb-3 flex-wrap">
-          <div><small class="text-muted d-block">Promedio</small><strong>${avg} ${m.unit}</strong></div>
-          <div><small class="text-muted d-block">Mín / Máx</small><strong>${min} / ${max}</strong></div>
-          <div><small class="text-muted d-block">Gasto total</small><strong>$${totalCost.toLocaleString('es-CO')}</strong></div>
+  // Helper para filtrar períodos según el rango elegido
+  function getPeriodSlice(periodos, rango){
+    if(rango === '1m') return periodos.slice(-1);
+    if(rango === '3m') return periodos.slice(-3);
+    if(rango === '6m') return periodos.slice(-6);
+    if(rango === '12m' || rango === '1a') return periodos.slice(-12);
+    return periodos; // 'todo'
+  }
+
+  // Estados activos de filtrado
+  let currentGastoRango = 'todo';
+  let currentGastoAgrup = 'mensual';
+  let currentHistoricoRango = 'todo';
+  const currentSvcRangos = {};
+  Object.keys(porSvc).forEach(s => { currentSvcRangos[s] = 'todo'; });
+
+  // 1. Gráfica de Gasto Monetario Consolidado
+  const gastoChartHtml = `
+    <div class="data-card mb-4" id="cardGastoMonetario">
+      <div class="data-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h5 class="mb-1"><i class="bi bi-cash-stack me-2" style="color: #10b981;"></i>Consolidado de Gasto Monetario</h5>
+          <small class="text-muted">Total acumulado pagado en servicios públicos según el período y vista seleccionada</small>
         </div>
-        ${varRows?`<table class="table-modern"><thead><tr><th>Período</th><th>Consumo</th><th>Var. Abs.</th><th>Var. %</th></tr></thead><tbody>${varRows}</tbody></table>`:'<p class="text-muted small">Solo un período registrado</p>'}
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <!-- Filtro de Rango -->
+          <div class="d-flex align-items-center gap-1">
+            <span class="small text-muted fw-500 d-none d-sm-inline">Período:</span>
+            <div class="btn-group btn-group-sm" role="group" id="gastoRangoGroup">
+              <button type="button" class="btn btn-outline-primary" data-rango="1m">1 Mes</button>
+              <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
+              <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
+              <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
+              <button type="button" class="btn btn-outline-primary active" data-rango="todo">Todo</button>
+            </div>
+          </div>
+          <!-- Filtro de Agrupación -->
+          <div class="d-flex align-items-center gap-1">
+            <span class="small text-muted fw-500 d-none d-sm-inline">Vista:</span>
+            <div class="btn-group btn-group-sm" role="group" id="gastoAgrupGroup">
+              <button type="button" class="btn btn-outline-secondary active" data-agrup="mensual">Mensual</button>
+              <button type="button" class="btn btn-outline-secondary" data-agrup="trimestral">Trimestral</button>
+              <button type="button" class="btn btn-outline-secondary" data-agrup="semestral">Semestral</button>
+              <button type="button" class="btn btn-outline-secondary" data-agrup="anual">Anual</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="data-card-body">
+        <div id="gastoSummaryContainer" class="mb-3"></div>
+        <div class="chart-container" style="height: 310px;">
+          <canvas id="analisisGastoChart"></canvas>
+        </div>
       </div>
     </div>`;
+
+  // 2. Gráfica de Comparativo Histórico de Consumo Físico
+  const historicoChartHtml = `
+    <div class="data-card mb-4">
+      <div class="data-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h5 class="mb-1"><i class="bi bi-graph-up me-2 text-primary"></i>Comparativo Histórico de Consumo</h5>
+          <small class="text-muted">Evolución del consumo físico (m³, kWh, Mbps) por servicio</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-muted fw-500 d-none d-sm-inline">Período:</span>
+          <div class="btn-group btn-group-sm" role="group" id="historicoRangoGroup">
+            <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
+            <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
+            <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
+            <button type="button" class="btn btn-outline-primary active" data-rango="todo">Todo</button>
+          </div>
+        </div>
+      </div>
+      <div class="data-card-body">
+        <div class="chart-container" style="height: 290px;">
+          <canvas id="analisisChart"></canvas>
+        </div>
+      </div>
+    </div>`;
+
+  // 3. Barra de herramientas para cuadros de servicios
+  const serviceCardsToolbar = `
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 mt-4">
+      <div>
+        <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-grid-fill me-2 text-primary"></i>Consolidado de Consumo por Servicio</h5>
+        <small class="text-muted">Estadísticas, gráficas individuales y variación histórica</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted fw-500">Filtrar todos:</span>
+        <div class="btn-group btn-group-sm" role="group" id="globalSvcRangoGroup">
+          <button type="button" class="btn btn-outline-primary" data-rango="3m">3 Meses</button>
+          <button type="button" class="btn btn-outline-primary" data-rango="6m">6 Meses</button>
+          <button type="button" class="btn btn-outline-primary" data-rango="12m">1 Año</button>
+          <button type="button" class="btn btn-outline-primary active" data-rango="todo">Todo</button>
+        </div>
+      </div>
+    </div>`;
+
+  // Generar HTML de cada tarjeta de servicio
+  let serviceCardsHtml = '<div class="gap-grid gap-grid-2 mb-4" id="serviceCardsGrid">';
+  Object.keys(porSvc).forEach(svc => {
+    const m = SERVICE_META[svc] || SERVICE_META.agua;
+    serviceCardsHtml += `
+      <div class="data-card" id="cardSvc-${svc}">
+        <div class="data-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <h5 class="mb-0"><i class="bi ${m.icon} me-2" style="color:var(--color-${m.cls})"></i>${m.label}</h5>
+            <span class="trend-badge stable" id="svcTrendBadge-${svc}">Estable</span>
+          </div>
+          <div class="btn-group btn-group-sm svc-individual-filter-group" role="group" data-svc="${svc}">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="3m">3m</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="6m">6m</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-rango="12m">1a</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm active" data-rango="todo">Todo</button>
+          </div>
+        </div>
+        <div class="data-card-body">
+          <div class="chart-container mb-3" style="height: 160px;">
+            <canvas id="analisisServiceChart-${svc}"></canvas>
+          </div>
+          <div class="d-flex gap-3 mb-3 flex-wrap" id="svcStatsContainer-${svc}"></div>
+          <div id="svcTableContainer-${svc}"></div>
+        </div>
+      </div>`;
   });
-  statsHtml+='</div>';
+  serviceCardsHtml += '</div>';
 
-  // Chart
-  let chartHtml=`<div class="data-card mb-4"><div class="data-card-header"><h5><i class="bi bi-graph-up me-2"></i>Comparativo Histórico</h5></div>
-    <div class="data-card-body"><div class="chart-container"><canvas id="analisisChart"></canvas></div></div></div>`;
+  c.innerHTML = gastoChartHtml + historicoChartHtml + serviceCardsToolbar + serviceCardsHtml;
 
-  c.innerHTML=chartHtml+statsHtml;
+  // Renderizador: Consolidado de Gasto Monetario
+  function updateGastoView(){
+    const selectedPeriodos = getPeriodSlice(allPeriodos, currentGastoRango);
+    const factsFiltradas = facturas.filter(f => selectedPeriodos.includes(f.periodo));
 
-  // Render chart
-  if(typeof Chart!=='undefined'){
-    const periodos=[...new Set(facturas.map(f=>f.periodo))].sort();
-    const colors={agua:'#0ea5e9',energia:'#f59e0b',gas:'#ef4444',internet:'#10b981'};
-    const datasets=Object.keys(porSvc).map(svc=>({
-      label:SERVICE_META[svc].label,
-      data:periodos.map(p=>{const f=porSvc[svc].find(x=>x.periodo===p);return f?f.consumo:null;}),
-      borderColor:colors[svc],backgroundColor:colors[svc]+'15',tension:0.4,borderWidth:2,fill:true,spanGaps:true
-    }));
-    new Chart(document.getElementById('analisisChart'),{type:'line',data:{labels:periodos,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'Consumo'}}}}});
+    // Agrupar según currentGastoAgrup
+    const groups = {};
+    factsFiltradas.forEach(f => {
+      const [y, mStr] = (f.periodo || '').split('-');
+      const m = parseInt(mStr, 10) || 1;
+      let key = f.periodo;
+      let label = f.periodo;
+
+      if (currentGastoAgrup === 'trimestral') {
+        const q = Math.ceil(m / 3);
+        key = `${y}-T${q}`;
+        label = `T${q} ${y}`;
+      } else if (currentGastoAgrup === 'semestral') {
+        const s = m <= 6 ? 1 : 2;
+        key = `${y}-S${s}`;
+        label = `S${s} ${y}`;
+      } else if (currentGastoAgrup === 'anual') {
+        key = `${y}`;
+        label = `Año ${y}`;
+      }
+
+      if (!groups[key]) groups[key] = { key, label, services: {}, total: 0 };
+      if (!groups[key].services[f.servicio]) groups[key].services[f.servicio] = 0;
+      const val = Number(f.valor) || 0;
+      groups[key].services[f.servicio] += val;
+      groups[key].total += val;
+    });
+
+    const sortedGroups = Object.keys(groups).sort().map(k => groups[k]);
+    const totalGasto = factsFiltradas.reduce((s, f) => s + (Number(f.valor) || 0), 0);
+    const activeSvcs = Object.keys(porSvc);
+
+    // Totales por servicio
+    const perSvcTotal = {};
+    activeSvcs.forEach(s => {
+      perSvcTotal[s] = factsFiltradas.filter(f => f.servicio === s).reduce((sum, f) => sum + (Number(f.valor) || 0), 0);
+    });
+
+    // Inyectar KPI de resumen
+    const avgPerGroup = sortedGroups.length ? Math.round(totalGasto / sortedGroups.length) : 0;
+    const summaryEl = document.getElementById('gastoSummaryContainer');
+    if (summaryEl) {
+      let svcChips = '';
+      activeSvcs.forEach(s => {
+        const m = SERVICE_META[s] || { label: s };
+        const sTot = perSvcTotal[s] || 0;
+        const pct = totalGasto > 0 ? ((sTot / totalGasto) * 100).toFixed(1) : 0;
+        svcChips += `
+          <div class="px-2 py-1 rounded small d-flex align-items-center gap-1 border" style="background:${colors[s]}10; border-color:${colors[s]}30 !important;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${colors[s]};"></span>
+            <strong>${m.label}:</strong> $${sTot.toLocaleString('es-CO')} <span class="text-muted">(${pct}%)</span>
+          </div>`;
+      });
+
+      summaryEl.innerHTML = `
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 rounded" style="background: #f8fafc; border: 1px solid var(--border);">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div>
+              <span class="text-muted small d-block">Gasto Total en el Período</span>
+              <span class="fs-4 fw-bold text-primary">$${Number(totalGasto).toLocaleString('es-CO')}</span>
+            </div>
+            <div class="border-start ps-3 d-none d-sm-block">
+              <span class="text-muted small d-block">Promedio (${currentGastoAgrup})</span>
+              <span class="fs-5 fw-600 text-dark">$${Number(avgPerGroup).toLocaleString('es-CO')}</span>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            ${svcChips}
+          </div>
+        </div>`;
+    }
+
+    // Dibujar gráfica con Chart.js
+    if (typeof Chart !== 'undefined') {
+      const canvasGasto = document.getElementById('analisisGastoChart');
+      if (canvasGasto) {
+        safeDestroyChart(analisisGastoChartInstance);
+        const groupLabels = sortedGroups.map(g => g.label);
+        const datasets = activeSvcs.map(svc => {
+          const m = SERVICE_META[svc] || { label: svc };
+          return {
+            type: 'bar',
+            label: m.label,
+            data: sortedGroups.map(g => g.services[svc] || 0),
+            backgroundColor: colors[svc] || '#3b82f6',
+            stack: 'gasto',
+            borderRadius: 4
+          };
+        });
+
+        // Línea de total consolidado
+        datasets.push({
+          type: 'line',
+          label: 'Gasto Total',
+          data: sortedGroups.map(g => g.total),
+          borderColor: '#0f172a',
+          backgroundColor: '#0f172a',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: false,
+          tension: 0.2
+        });
+
+        analisisGastoChartInstance = new Chart(canvasGasto, {
+          data: { labels: groupLabels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.dataset.label}: $${Number(ctx.raw || 0).toLocaleString('es-CO')}`,
+                  footer: (tooltipItems) => {
+                    let sum = 0;
+                    tooltipItems.forEach(item => {
+                      if (item.dataset.type === 'bar') sum += (item.raw || 0);
+                    });
+                    return sum > 0 ? `Total: $${Number(sum).toLocaleString('es-CO')}` : '';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true, grid: { display: false } },
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: { callback: v => '$' + Number(v).toLocaleString('es-CO') },
+                title: { display: true, text: 'Gasto ($ COP)' }
+              }
+            }
+          }
+        });
+      }
+    }
   }
+
+  // Renderizador: Comparativo Histórico de Consumo
+  function updateHistoricoView(){
+    const selectedPeriodos = getPeriodSlice(allPeriodos, currentHistoricoRango);
+    if (typeof Chart !== 'undefined') {
+      const canvasHist = document.getElementById('analisisChart');
+      if (canvasHist) {
+        safeDestroyChart(analisisChartInstance);
+        const datasets = Object.keys(porSvc).map(svc => {
+          const m = SERVICE_META[svc] || { label: svc };
+          return {
+            label: m.label,
+            data: selectedPeriodos.map(p => {
+              const f = porSvc[svc].find(x => x.periodo === p);
+              return f ? f.consumo : null;
+            }),
+            borderColor: colors[svc],
+            backgroundColor: colors[svc] + '15',
+            tension: 0.4,
+            borderWidth: 2,
+            fill: true,
+            spanGaps: true
+          };
+        });
+
+        analisisChartInstance = new Chart(canvasHist, {
+          type: 'line',
+          data: { labels: selectedPeriodos, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Consumo' } } }
+          }
+        });
+      }
+    }
+  }
+
+  // Renderizador: Cuadro individual de servicio
+  function updateServiceCard(svc){
+    const m = SERVICE_META[svc] || SERVICE_META.agua;
+    const allFacts = porSvc[svc] || [];
+    const rango = currentSvcRangos[svc] || 'todo';
+    const selectedPeriodos = getPeriodSlice(allPeriodos, rango);
+    const filtered = allFacts.filter(f => selectedPeriodos.includes(f.periodo));
+
+    // Cálculos estadísticos
+    const consumos = filtered.map(f => f.consumo);
+    const avg = consumos.length ? (consumos.reduce((s, x) => s + x, 0) / consumos.length).toFixed(1) : 0;
+    const min = consumos.length ? Math.min(...consumos) : 0;
+    const max = consumos.length ? Math.max(...consumos) : 0;
+    const totalCost = filtered.reduce((s, f) => s + (Number(f.valor) || 0), 0);
+
+    // Tendencia
+    let trend = 'stable', trendLabel = 'Estable', trendCls = 'stable';
+    if (consumos.length >= 2) {
+      const last = consumos[consumos.length - 1];
+      const prevAvg = consumos.slice(0, -1).reduce((s, x) => s + x, 0) / (consumos.length - 1);
+      const pct = prevAvg > 0 ? ((last - prevAvg) / prevAvg * 100) : 0;
+      if (pct > 5) { trend = 'up'; trendLabel = 'Creciente'; trendCls = 'up'; }
+      else if (pct < -5) { trend = 'down'; trendLabel = 'Decreciente'; trendCls = 'down'; }
+    }
+
+    // Actualizar badge de tendencia
+    const badgeEl = document.getElementById(`svcTrendBadge-${svc}`);
+    if (badgeEl) {
+      badgeEl.className = `trend-badge ${trendCls}`;
+      badgeEl.textContent = trendLabel;
+    }
+
+    // Actualizar contenedor de KPIs
+    const kpiEl = document.getElementById(`svcStatsContainer-${svc}`);
+    if (kpiEl) {
+      kpiEl.innerHTML = `
+        <div><small class="text-muted d-block">Promedio</small><strong>${avg} ${m.unit}</strong></div>
+        <div><small class="text-muted d-block">Mín / Máx</small><strong>${min} / ${max}</strong></div>
+        <div><small class="text-muted d-block">Gasto total</small><strong>$${totalCost.toLocaleString('es-CO')}</strong></div>
+      `;
+    }
+
+    // Construir tabla de variación
+    let varRows = '';
+    for (let i = 1; i < filtered.length; i++) {
+      const prev = filtered[i - 1], cur = filtered[i];
+      const abs = (cur.consumo - prev.consumo).toFixed(1);
+      const pct = prev.consumo > 0 ? ((cur.consumo - prev.consumo) / prev.consumo * 100).toFixed(1) : '—';
+      const cls = pct > 0 ? 'trend-up' : pct < 0 ? 'trend-down' : 'trend-stable';
+      varRows += `<tr><td>${escapeHtml(cur.periodo)}</td><td>${cur.consumo} ${m.unit}</td><td class="${cls}">${abs > 0 ? '+' : ''}${abs}</td><td class="${cls}">${pct}%</td></tr>`;
+    }
+    const tableEl = document.getElementById(`svcTableContainer-${svc}`);
+    if (tableEl) {
+      tableEl.innerHTML = varRows
+        ? `<table class="table-modern"><thead><tr><th>Período</th><th>Consumo</th><th>Var. Abs.</th><th>Var. %</th></tr></thead><tbody>${varRows}</tbody></table>`
+        : `<p class="text-muted small mb-0">${filtered.length === 1 ? 'Solo un período registrado en este rango' : 'Sin registros en este rango'}</p>`;
+    }
+
+    // Gráfica individual de consumo del servicio
+    if (typeof Chart !== 'undefined') {
+      const canvasSvc = document.getElementById(`analisisServiceChart-${svc}`);
+      if (canvasSvc) {
+        safeDestroyChart(analisisServiceChartInstances[svc]);
+        const chartLabels = filtered.map(f => f.periodo);
+        const chartData = filtered.map(f => f.consumo);
+        const chartValores = filtered.map(f => f.valor);
+
+        analisisServiceChartInstances[svc] = new Chart(canvasSvc, {
+          type: 'line',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: `Consumo (${m.unit})`,
+              data: chartData,
+              borderColor: colors[svc] || '#3b82f6',
+              backgroundColor: (colors[svc] || '#3b82f6') + '20',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 3,
+              pointHoverRadius: 5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const cVal = ctx.raw;
+                    const vVal = chartValores[ctx.dataIndex];
+                    return [`Consumo: ${cVal} ${m.unit}`, `Gasto: $${Number(vVal || 0).toLocaleString('es-CO')}`];
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+              y: { beginAtZero: false, ticks: { font: { size: 10 } } }
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // Render inicial de todas las vistas
+  updateGastoView();
+  updateHistoricoView();
+  Object.keys(porSvc).forEach(svc => updateServiceCard(svc));
+
+  // Listeners: Botones de rango de gasto
+  const gastoRangoBtns = document.querySelectorAll('#gastoRangoGroup button');
+  gastoRangoBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      gastoRangoBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentGastoRango = btn.getAttribute('data-rango');
+      updateGastoView();
+    });
+  });
+
+  // Listeners: Botones de agrupación de gasto
+  const gastoAgrupBtns = document.querySelectorAll('#gastoAgrupGroup button');
+  gastoAgrupBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      gastoAgrupBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentGastoAgrup = btn.getAttribute('data-agrup');
+      updateGastoView();
+    });
+  });
+
+  // Listeners: Botones de rango histórico de consumo
+  const histBtns = document.querySelectorAll('#historicoRangoGroup button');
+  histBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      histBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentHistoricoRango = btn.getAttribute('data-rango');
+      updateHistoricoView();
+    });
+  });
+
+  // Listeners: Filtro global de servicios
+  const globalSvcBtns = document.querySelectorAll('#globalSvcRangoGroup button');
+  globalSvcBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      globalSvcBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const r = btn.getAttribute('data-rango');
+      Object.keys(porSvc).forEach(svc => {
+        currentSvcRangos[svc] = r;
+        const cardBtns = document.querySelectorAll(`.svc-individual-filter-group[data-svc="${svc}"] button`);
+        cardBtns.forEach(cb => {
+          if (cb.getAttribute('data-rango') === r) cb.classList.add('active');
+          else cb.classList.remove('active');
+        });
+        updateServiceCard(svc);
+      });
+    });
+  });
+
+  // Listeners: Botones individuales de cada tarjeta de servicio
+  document.querySelectorAll('.svc-individual-filter-group button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const parentGroup = e.target.closest('.svc-individual-filter-group');
+      const svc = parentGroup.getAttribute('data-svc');
+      const r = e.target.getAttribute('data-rango');
+      parentGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentSvcRangos[svc] = r;
+      updateServiceCard(svc);
+    });
+  });
 }
 
 // ============ ALERTAS ============
@@ -949,3 +1397,4 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (installBtn) installBtn.hidden = true;
   });
 });
+
