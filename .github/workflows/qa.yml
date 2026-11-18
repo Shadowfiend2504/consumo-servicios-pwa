@@ -66,14 +66,18 @@ jobs:
         run: |
           docker run --rm --network host \
             -v ${{ github.workspace }}:/zap/wrk:rw \
-            owasp/zap2docker-stable \
-            zap-baseline.py -t http://127.0.0.1:4173 -g gen.conf -J zap-report.json -r zap-report.html || true
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://127.0.0.1:4173 \
+            -g /zap/wrk/gen.conf \
+            -J /zap/wrk/zap-report.json \
+            -r /zap/wrk/zap-report.html
 
       - name: Upload ZAP report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
+          if-no-files-found: error
           path: |
             zap-report.json
             zap-report.html
