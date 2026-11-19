@@ -70,6 +70,7 @@ jobs:
             -v ${{ github.workspace }}:/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py -t http://127.0.0.1:4173 \
+            -I \
             -g /zap/wrk/zap-reports/gen.conf \
             -J /zap/wrk/zap-reports/zap-report.json \
             -r /zap/wrk/zap-reports/zap-report.html
